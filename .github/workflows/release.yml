@@ -33,7 +33,7 @@ jobs:
       - name: Create Release Pull Request or Publish to npm
         id: changesets
         #uses: changesets/action@v1
-        uses: GarthDB/changesets-action@v1.6.9
+        uses: GarthDB/changesets-action@v1.6.8
         with:
           version: pnpm ci:version
           publish: pnpm ci:publish
