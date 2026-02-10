@@ -4,5 +4,7 @@
   "initialVersions": {
     "@noxify/casl-drizzle": "0.0.0"
   },
-  "changesets": []
+  "changesets": [
+    "blue-streets-thank"
+  ]
 }

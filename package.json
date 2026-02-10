@@ -1,6 +1,6 @@
 {
   "name": "@noxify/casl-drizzle",
-  "version": "0.0.0",
+  "version": "0.0.1-beta.0",
   "description": "Drizzle-ORM adapter for CASL - generate Drizzle where inputs from CASL abilities",
   "keywords": [
     "drizzle",
