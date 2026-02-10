@@ -18,6 +18,7 @@ jobs:
     permissions:
       pull-requests: write
       contents: write
+
     steps:
       - uses: actions/checkout@v6
         with:
@@ -31,14 +32,11 @@ jobs:
         uses: changesets/action@v1
         with:
           version: pnpm ci:version
-          publish: pnpm ci:publish
-
         env:
           GITHUB_TOKEN: ${{ secrets.CHANGESETS_TOKEN }}
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
 
-      # - name: Publish to npm
-      #   if: steps.changesets.outputs.hasChangesets == 'false'
-      #   run: yarn run changeset:publish
-      #   env:
-      #     NPM_CONFIG_PROVENANCE: true
+      - name: Publish to npm
+        if: steps.changesets.outputs.hasChangesets == 'false'
+        run: pnpm ci:publish
+        env:
+          NPM_CONFIG_PROVENANCE: true
