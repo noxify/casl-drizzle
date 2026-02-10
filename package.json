@@ -35,6 +35,7 @@
   "files": [
     "dist"
   ],
+  "packageManager": "pnpm@10.29.2",
   "scripts": {
     "build": "tsdown",
     "cs": "changeset",
