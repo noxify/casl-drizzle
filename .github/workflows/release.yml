@@ -1,0 +1,38 @@
+# https://github.com/changesets/action/issues/70
+name: Release
+
+on:
+  push:
+    branches:
+      - main
+
+concurrency: ${{ github.workflow }}-${{ github.ref }}
+
+permissions:
+  contents: read
+  id-token: write # Required for OIDC
+jobs:
+  release:
+    name: Release
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+      contents: write
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Setup
+        uses: ./.github/setup
+
+      - name: Create Release Pull Request or Publish to npm
+        id: changesets
+        uses: changesets/action@v1
+        with:
+          version: pnpm ci:version
+          publish: pnpm ci:publish
+
+        env:
+          GITHUB_TOKEN: ${{ secrets.CHANGESETS_TOKEN }}
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
