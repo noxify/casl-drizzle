@@ -1,3 +1,5 @@
+> work in progress :)
+
 # casl-drizzle
 
 CASL integration for Drizzle ORM - Add type-safe authorization to your database queries
