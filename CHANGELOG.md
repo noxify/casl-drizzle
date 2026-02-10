@@ -1,5 +1,11 @@
 # @noxify/casl-drizzle
 
+## 0.0.1-beta.2
+
+### Patch Changes
+
+- a14cf19: update license year
+
 ## 0.0.1-beta.1
 
 ### Patch Changes
