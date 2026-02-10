@@ -9,7 +9,7 @@ on:
 concurrency: ${{ github.workflow }}-${{ github.ref }}
 
 permissions:
-  contents: read
+  contents: write
   id-token: write # Required for OIDC
 jobs:
   release:
@@ -38,5 +38,3 @@ jobs:
       - name: Publish to npm
         if: steps.changesets.outputs.hasChangesets == 'false'
         run: pnpm ci:publish
-        env:
-          NPM_CONFIG_PROVENANCE: true
