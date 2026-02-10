@@ -5,6 +5,7 @@
     "@noxify/casl-drizzle": "0.0.0"
   },
   "changesets": [
-    "blue-streets-thank"
+    "blue-streets-thank",
+    "orange-times-go"
   ]
 }
