@@ -1,50 +1,84 @@
 {
-  "name": "ucastle",
-  "version": "1.4.3",
-  "description": "Convert CASL rules into Drizzle filters",
+  "name": "casl-drizzle",
+  "version": "0.0.0",
+  "description": "Drizzle-ORM adapter for CASL - generate Drizzle where inputs from CASL abilities",
   "keywords": [
     "drizzle",
+    "drizzle-orm",
     "casl",
     "ucast"
   ],
-  "repository": "araujogui/ucastle",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/noxify/casl-drizzle"
+  },
   "license": "MIT",
-  "author": "Guilherme Araújo <arauujogui@gmail.com>",
+  "authors": [
+    {
+      "name": "Marcus Reinhardt",
+      "email": "webstone@gmail.com"
+    },
+    {
+      "name": "Guilherme Araújo",
+      "email": "arauujogui@gmail.com"
+    }
+  ],
   "type": "module",
   "exports": {
-    "types": "./dist/index.d.ts",
-    "default": "./dist/index.js"
+    ".": {
+      "types": "./dist/index.d.mts",
+      "import": "./dist/index.mjs",
+      "default": "./src/index.ts"
+    }
   },
+  "types": "./dist/index.d.mts",
   "files": [
     "dist"
   ],
   "scripts": {
-    "build": "tsc --project tsconfig.build.json",
-    "check-types": "tsc --noEmit",
-    "format": "prettier --write .",
+    "build": "tsdown",
+    "cs": "changeset",
+    "format": "prettier --check . --ignore-path ./.gitignore --ignore-path ./.prettierignore",
+    "format:fix": "prettier --write . --ignore-path ./.gitignore --ignore-path ./.prettierignore",
     "lint": "eslint .",
-    "test": "vitest",
-    "test:w": "vitest --watch"
+    "lint:fix": "eslint . --fix",
+    "test": "vitest --run",
+    "test:coverage": "vitest --coverage",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@casl/ability": "^6.7.2",
     "@ucast/core": "^1.10.2",
-    "drizzle-orm": "^0.38.1"
+    "@ucast/js": "3.1.0"
   },
+  "prettier": "./prettier.config.mjs",
   "devDependencies": {
-    "@eslint/js": "^9.16.0",
-    "@types/node": "^22.10.2",
-    "eslint": "^9.16.0",
-    "globals": "^15.13.0",
-    "prettier": "3.4.2",
-    "typescript": "^5.7.2",
-    "typescript-eslint": "^8.18.0",
-    "vitest": "^2.1.8"
+    "@casl/ability": "^6.8.0",
+    "@changesets/cli": "2.29.8",
+    "@eslint/compat": "2.0.2",
+    "@eslint/js": "9.39.2",
+    "@ianvs/prettier-plugin-sort-imports": "4.7.1",
+    "@types/js-yaml": "4.0.9",
+    "@types/node": "24.10.12",
+    "@vitest/coverage-v8": "4.0.18",
+    "dedent": "1.7.1",
+    "drizzle-orm": "beta",
+    "eslint": "9.39.2",
+    "eslint-plugin-import": "2.32.0",
+    "eslint-plugin-package-json": "0.88.2",
+    "json-schema-to-typescript": "15.0.4",
+    "jsonc-eslint-parser": "2.4.2",
+    "node-pty": "1.1.0",
+    "prettier": "3.8.1",
+    "tsdown": "0.20.3",
+    "tsx": "4.21.0",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "8.55.0",
+    "vitest": "4.0.18"
   },
   "peerDependencies": {
-    "@casl/ability": "^6.0.0",
-    "@ucast/core": "^1.0.0",
-    "drizzle-orm": "^0.38.0"
+    "@casl/ability": "^6.8.0",
+    "drizzle-orm": ">=1.0.0-beta.15"
   },
   "engines": {
     "node": ">=22"

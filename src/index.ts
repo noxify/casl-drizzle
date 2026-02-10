@@ -1,136 +1,100 @@
-import { AnyMongoAbility, ExtractSubjectType } from "@casl/ability";
-import { rulesToAST } from "@casl/ability/extra";
-import { CompoundCondition, Condition, FieldCondition } from "@ucast/core";
-import * as drizzle from "drizzle-orm";
-import { isRegExp } from "node:util/types";
+import type { AbilityOptions, AbilityTuple, AnyAbility, RawRuleFrom } from "@casl/ability"
+import { AbilityBuilder, fieldPatternMatcher, PureAbility } from "@casl/ability"
 
-export type TableWithColumns<
-  T extends drizzle.TableConfig = drizzle.TableConfig,
-> = drizzle.Table<T> & {
-  [Key in keyof T["columns"]]: T["columns"][Key];
-};
+import type { DrizzleQueryFactory } from "./runtime"
+import { createAbilityFactory, drizzleQuery } from "./runtime"
 
-type FieldInterpreter = (
-  condition: FieldCondition,
-  table: TableWithColumns,
-) => drizzle.SQL | undefined;
+export { accessibleBy, ParsingQueryError, drizzleQuery } from "./runtime"
+export type * from "./runtime"
 
-type CompoundInterpreter = (
-  conditions: CompoundCondition,
-  table: TableWithColumns,
-) => drizzle.SQL | undefined;
-
-const eq: FieldInterpreter = (condition, table) => {
-  const column = table[condition.field];
-
-  if (isRegExp(condition.value)) {
-    return drizzle.ilike(column, condition.value.source);
-  }
-
-  return drizzle.eq(column, condition.value);
-};
-
-const ne: FieldInterpreter = (condition, table) => {
-  const column = table[condition.field];
-
-  return drizzle.ne(column, condition.value);
-};
-
-const gt: FieldInterpreter = (condition, table) => {
-  const column = table[condition.field];
-
-  return drizzle.gt(column, condition.value);
-};
-
-const gte: FieldInterpreter = (condition, table) => {
-  const column = table[condition.field];
-
-  return drizzle.gte(column, condition.value);
-};
-
-const lt: FieldInterpreter = (condition, table) => {
-  const column = table[condition.field];
-
-  return drizzle.lt(column, condition.value);
-};
-
-const lte: FieldInterpreter = (condition, table) => {
-  const column = table[condition.field];
-
-  return drizzle.lte(column, condition.value);
-};
-
-// we can't use `in` as const, so we're using `inArray` as alias
-// inside the `interpreters` object we rename it to `in` to avoid confusion
-const inArray: FieldInterpreter = (condition, table) => {
-  const column = table[condition.field];
-  return drizzle.inArray(column, condition.value as unknown[]);
-};
-
-const notInArray: FieldInterpreter = (condition, table) => {
-  const column = table[condition.field];
-  return drizzle.notInArray(column, condition.value as unknown[]);
-};
-
-const and: CompoundInterpreter = (conditions, table) => {
-  return drizzle.and(
-    ...conditions.value.map((condition) => {
-      return generateSQL(condition, table);
-    }),
-  );
-};
-
-const or: CompoundInterpreter = (conditions, table) => {
-  return drizzle.or(
-    ...conditions.value.map((condition) => {
-      return generateSQL(condition, table);
-    }),
-  );
-};
-
-const interpreters: Record<string, FieldInterpreter | CompoundInterpreter> = {
-  eq,
-  ne,
-  gt,
-  gte,
-  lt,
-  lte,
-  and,
-  or,
-  in: inArray,
-  nin: notInArray,
-};
-
-export function generateSQL<T extends drizzle.TableConfig>(
-  condition: Condition,
-  table: TableWithColumns<T>,
-): drizzle.SQL | undefined {
-  const { operator } = condition;
-
-  const op = interpreters[operator];
-
-  if (!op) {
-    throw new Error(`Unsupported operator: ${operator}`);
-  }
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  return op(condition as any, table);
+/**
+ * Factory function to create a DrizzleAbility instance.
+ * Use with AbilityBuilder for type-safe ability definitions.
+ *
+ * @example
+ * ```ts
+ * import { AbilityBuilder } from "@casl/ability"
+ * import { createDrizzleAbilityFor, type DefineAbility } from "ucastle"
+ *
+ * type AppAbility = DefineAbility<{
+ *   users: UserQuery
+ *   posts: PostQuery
+ * }>
+ *
+ * const { can, build } = new AbilityBuilder<AppAbility>(createDrizzleAbilityFor())
+ * ```
+ */
+export function createDrizzleAbilityFor(): new (
+  ...args: ConstructorParameters<typeof PureAbility>
+) => AnyAbility {
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-return, @typescript-eslint/no-explicit-any
+  return createAbilityFactory<string, DrizzleQueryFactory>() as any
 }
 
-export function rulesToDrizzle<
-  T extends drizzle.TableConfig,
-  U extends AnyMongoAbility,
->(
-  ability: U,
-  action: Parameters<U["rulesFor"]>[0],
-  subject: ExtractSubjectType<Parameters<U["rulesFor"]>[1]>,
-  table: TableWithColumns<T>,
-): drizzle.SQL | undefined {
-  const condition = rulesToAST(ability, action, subject);
+/**
+ * Create a type-safe ability with subject-specific conditions.
+ * This provides better autocomplete than using AbilityBuilder directly.
+ *
+ * @example
+ * ```ts
+ * import { defineAbility } from "ucastle"
+ *
+ * const ability = defineAbility<{
+ *   users: UserQuery
+ *   posts: PostQuery
+ * }>((can, cannot) => {
+ *   can("read", "users", { id: 1 }) // ✅ Only user fields
+ *   can("read", "posts", { authorId: 1 }) // ✅ Only post fields
+ * })
+ * ```
+ */
+export function defineAbility<T>(
+  define: (
+    can: <S extends keyof T & string>(action: string, subject: S, conditions?: T[S]) => void,
+    cannot: <S extends keyof T & string>(action: string, subject: S, conditions?: T[S]) => void,
+  ) => void,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+): PureAbility<[string, any], T[keyof T]> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  type AppAbility = PureAbility<[string, any], T[keyof T]>
 
-  if (!condition) {
-    return undefined;
+  const builder = new AbilityBuilder<AppAbility>(
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-explicit-any
+    createAbilityFactory<string, DrizzleQueryFactory>() as any,
+  )
+
+  define(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (action, subject, conditions) => builder.can(action, subject, conditions as any),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (action, subject, conditions) => builder.cannot(action, subject, conditions as any),
+  )
+
+  return builder.build()
+}
+
+/**
+ * Uses conditional type to support union distribution
+ */
+type ExtendedAbilityTuple<T extends AbilityTuple> = T extends AbilityTuple
+  ? [T[0], "all" | T[1]]
+  : never
+
+/**
+ * @deprecated use createDrizzleAbilityFor instead
+ */
+export class DrizzleAbility<
+  A extends AbilityTuple = [string, string],
+  C extends Record<string, unknown> = Record<string, unknown>,
+> extends PureAbility<ExtendedAbilityTuple<A>, C> {
+  constructor(
+    rules?: RawRuleFrom<ExtendedAbilityTuple<A>, C>[],
+    options?: AbilityOptions<ExtendedAbilityTuple<A>, C>,
+  ) {
+    super(rules, {
+      conditionsMatcher: drizzleQuery,
+      fieldMatcher: fieldPatternMatcher,
+      ...options,
+    })
   }
-
-  return generateSQL(condition, table);
 }

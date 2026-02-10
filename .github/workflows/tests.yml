@@ -1,0 +1,59 @@
+name: Tests
+
+on:
+  pull_request:
+    branches: ["*"]
+  push:
+    branches: ["main", "changesets/release"]
+  merge_group:
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: "PR number to run CI for"
+        required: false
+        type: string
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+permissions:
+  contents: read
+  pull-requests: read
+  checks: write
+  statuses: write
+
+# You can leverage Vercel Remote Caching with Turbo to speed up your builds
+# @link https://turborepo.org/docs/core-concepts/remote-caching#remote-caching-on-vercel-builds
+env:
+  FORCE_COLOR: 3
+
+jobs:
+  node_versions:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [22, 24]
+    name: Test (Node.js ${{ matrix.node-version }})
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v6
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          run_install: false
+
+      - shell: bash
+        run: pnpm install
+
+      - name: Build packages
+        run: |
+          pnpm build
+
+      - name: Run tests
+        run: pnpm test

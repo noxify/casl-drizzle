@@ -1,60 +1,78 @@
 name: CI
 
 on:
-  push:
-    branches:
-      - main
   pull_request:
-    branches:
-      - main
+    branches: ["*"]
+  push:
+    branches: ["main", "changesets/release"]
+  merge_group:
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: "PR number to run CI for"
+        required: false
+        type: string
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+permissions:
+  contents: read
+  pull-requests: read
+  checks: write
+  statuses: write
+
+# You can leverage Vercel Remote Caching with Turbo to speed up your builds
+# @link https://turborepo.org/docs/core-concepts/remote-caching#remote-caching-on-vercel-builds
+env:
+  FORCE_COLOR: 3
 
 jobs:
-  build:
-    name: Build
+  lint:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
-      - name: Install pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 9
+      - name: Setup
+        uses: ./.github/setup
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: "pnpm"
+      - name: Lint
+        run: pnpm lint
 
-      - name: Install dependencies
-        run: pnpm install
+  format:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Setup
+        uses: ./.github/setup
+
+      - name: Format
+        run: pnpm format
+
+  typecheck:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Setup
+        uses: ./.github/setup
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+  pkg-new-release:
+    needs: [lint, format, typecheck]
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Setup
+        uses: ./.github/setup
 
       - name: Build
         run: pnpm build
 
-  tests:
-    name: Tests
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Install pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 9
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: "pnpm"
-
-      - name: Install dependencies
-        run: pnpm install
-
-      - name: Run tests
-        run: pnpm test
+      - run: pnpx pkg-pr-new publish ./*

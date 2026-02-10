@@ -1,34 +1,105 @@
-# ucastle
+# casl-drizzle
 
-Convert CASL rules into Drizzle filters
+CASL integration for Drizzle ORM - Add type-safe authorization to your database queries
 
 ## Install
 
 ```sh
-npm install ucastle
+npm install ucastle @casl/ability
 ```
 
-## Usage
+## Quick Start
 
-```js
-import { defineAbility } from "@casl/ability";
-import { rulesToDrizzle } from "ucastle";
+Define your abilities using Drizzle's query types directly:
 
-// Use any of your Drizzle tables
+```typescript
+import type { QueryInput } from "ucastle"
+import { integer, pgTable, text } from "drizzle-orm/pg-core"
+import { accessibleBy, defineAbility } from "ucastle"
+
+// Define your Drizzle schema
 const users = pgTable("users", {
   id: integer().primaryKey(),
-});
+  name: text().notNull(),
+  email: text().notNull(),
+})
 
-// Define your CASL ability
-const ability = defineAbility((can) => {
-  can("read", "User", { id: 1, age: { $lt: 18 } });
-  can("read", "User", { age: { $gte: 18 } });
-});
+const schema = { users }
 
-// Convert MongoDB query conditions into Drizzle filters
-const where = rulesToDrizzle(ability, "read", "User", users);
-// => or(
-//  gte(users.age, 18),
-//  and(eq(users.id, 1), lt(users.age, 18)),
-// )
+// Extract query types for your tables
+type UserQuery = QueryInput<typeof schema, "users">
+
+// Create abilities with subject-specific autocomplete
+const ability = defineAbility<{ users: UserQuery }>((can, cannot) => {
+  can("read", "users", { id: 1 }) // ✅ Autocomplete shows only user fields!
+  can("update", "users", { id: 1 })
+  cannot("delete", "users")
+})
+
+// Use with accessibleBy to get database filters
+const filters = accessibleBy(ability, "read")
+const readableUsers = await db.query.users.findMany({ where: filters.users })
 ```
+
+## Features
+
+- 🔒 **Type-safe authorization** - Full TypeScript support with Drizzle types
+- 🎯 **CASL integration** - Leverage CASL's powerful rule system
+- 🗄️ **DB agnostic** - Works with PostgreSQL, MySQL, SQLite, etc.
+- 🔗 **Relation support** - Filter by related table conditions
+- 📦 **Zero overhead** - Direct type composition, no runtime wrappers
+- 💡 **Smart autocomplete** - Subject-specific field suggestions with `defineAbility()`
+
+## With Relations
+
+For schemas with relations, use `RelationalQueryInput`:
+
+```typescript
+import type { RelationalQueryInput } from "ucastle"
+import { defineRelations } from "drizzle-orm"
+
+const posts = pgTable("posts", {
+  id: integer().primaryKey(),
+  title: text().notNull(),
+  authorId: integer().notNull(),
+})
+
+const relations = defineRelations({ users, posts }, (r) => ({
+  users: { posts: r.many(posts) },
+  posts: { author: r.one(users, { fields: [posts.authorId], references: [users.id] }) },
+}))
+
+type PostQuery = RelationalQueryInput<typeof relations, "posts">
+
+const ability = defineAbility<{ posts: PostQuery }>((can) => {
+  can("read", "posts", { published: true })
+  can("update", "posts", { authorId: 1 })
+})
+```
+
+## Alternative: AbilityBuilder
+
+If you prefer the traditional AbilityBuilder pattern:
+
+```typescript
+import type { DefineAbility } from "ucastle"
+import { AbilityBuilder } from "@casl/ability"
+import { createDrizzleAbilityFor } from "ucastle"
+
+type AppAbility = DefineAbility<{ users: UserQuery }>
+
+const { can, cannot, build } = new AbilityBuilder<AppAbility>(createDrizzleAbilityFor())
+
+can("read", "users", { id: 1 })
+cannot("delete", "users")
+
+const ability = build()
+```
+
+## Documentation
+
+See [SIMPLIFIED_API.md](./SIMPLIFIED_API.md) for detailed examples and patterns.
+
+## License
+
+MIT

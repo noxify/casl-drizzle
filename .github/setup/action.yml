@@ -1,0 +1,15 @@
+name: "Setup and install"
+description: "Common setup steps for Actions"
+
+runs:
+  using: composite
+  steps:
+    - uses: pnpm/action-setup@v4
+    - uses: actions/setup-node@v6
+      with:
+        node-version-file: ".nvmrc"
+        registry-url: "https://registry.npmjs.org"
+        cache: "pnpm"
+
+    - shell: bash
+      run: pnpm install
