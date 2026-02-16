@@ -7,6 +7,7 @@ export default defineConfig({
     environment: "node",
     passWithNoTests: true,
     testTimeout: 10000,
+    pool: "threads",
     coverage: {
       provider: "v8",
       reporter: ["text", "json", "html"],
