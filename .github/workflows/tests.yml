@@ -96,12 +96,16 @@ jobs:
           date -u
           echo ""
 
+          # Run with verbose reporter and benchmark
+          echo "=== Node.js loaded modules at startup ==="
+          node -e "console.log('Modules loaded:', require.cache ? Object.keys(require.cache).length : 'N/A')"
+          
           # Run with verbose reporter
-          pnpm test --reporter=verbose 2>&1 | tee test-output.log
-
+          pnpm test --reporter=verbose --slow-test-threshold 100 2>&1 | tee test-output.log
+          
           echo ""
           echo "=== Test Execution End ==="
           date -u
           echo ""
-          echo "=== Test Duration Summary (from log) ==="
-          grep -E "PASS|FAIL|✓|✖|ms" test-output.log | tail -30
+          echo "=== Test Duration Breakdown ==="
+          grep -E "Duration|transform|import|setup|tests|environment" test-output.log | head -20
