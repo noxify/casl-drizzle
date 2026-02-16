@@ -85,6 +85,25 @@ jobs:
           echo ""
           echo "=== package.json test script ==="
           jq '.scripts.test' package.json
+          echo ""
+          echo "=== Node pools & threading (for optimization ideas) ==="
+          node -e "console.log('OS CPUs:', require('os').cpus().length)"
+
+      - name: Build packages
+        run: |
+          pnpm build
+
+      - name: Analyze module sizes (for import optimization)
+        run: |
+          echo "=== Largest dependencies (potential import time culprits) ==="
+          du -sh node_modules/@electric-sql 2>/dev/null | head -1 || echo "PGlite not found"
+          du -sh node_modules/drizzle-orm 2>/dev/null | head -1 || echo "Drizzle not found"
+          du -sh node_modules/drizzle-kit 2>/dev/null | head -1 || echo "Drizzle-kit not found"
+          du -sh node_modules/@casl 2>/dev/null | head -1 || echo "CASL not found"
+          du -sh node_modules/typescript 2>/dev/null | head -1 || echo "TypeScript not found"
+          echo ""
+          echo "=== Total node_modules size ==="
+          du -sh node_modules
 
       - name: Build packages
         run: |
