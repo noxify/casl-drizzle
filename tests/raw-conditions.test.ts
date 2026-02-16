@@ -19,11 +19,11 @@ describe("RAW SQL conditions and relation helpers", () => {
   })
 
   it("should support RAW SQL conditions in abilities", async () => {
-        await db.insert(schema.users).values([
-          { id: 1, name: "Alice" },
-          { id: 2, name: "Bob" },
-          { id: 3, name: "Charlie" },
-        ])
+    await db.insert(schema.users).values([
+      { id: 1, name: "Alice" },
+      { id: 2, name: "Bob" },
+      { id: 3, name: "Charlie" },
+    ])
 
     type AllowedAction = "read" | "create" | "update" | "delete"
 
@@ -51,11 +51,11 @@ describe("RAW SQL conditions and relation helpers", () => {
   })
 
   it("should support RAW SQL with parameters", async () => {
-        await db.insert(schema.users).values([
-          { id: 1, name: "Alice" },
-          { id: 2, name: "Bob" },
-          { id: 3, name: "Charlie" },
-        ])
+    await db.insert(schema.users).values([
+      { id: 1, name: "Alice" },
+      { id: 2, name: "Bob" },
+      { id: 3, name: "Charlie" },
+    ])
 
     type AllowedAction = "read"
 
@@ -83,16 +83,16 @@ describe("RAW SQL conditions and relation helpers", () => {
   })
 
   it("should support RAW SQL with helper functions (some)", async () => {
-        await db.insert(schema.users).values([
-          { id: 1, name: "Alice" },
-          { id: 2, name: "Bob" },
-        ])
+    await db.insert(schema.users).values([
+      { id: 1, name: "Alice" },
+      { id: 2, name: "Bob" },
+    ])
 
-        await db.insert(schema.posts).values([
-          { id: 1, content: "Post by Alice", authorId: 1 },
-          { id: 2, content: "Post by Bob", authorId: 2 },
-          { id: 3, content: "Another by Alice", authorId: 1 },
-        ])
+    await db.insert(schema.posts).values([
+      { id: 1, content: "Post by Alice", authorId: 1 },
+      { id: 2, content: "Post by Bob", authorId: 2 },
+      { id: 3, content: "Another by Alice", authorId: 1 },
+    ])
 
     type AllowedAction = "read"
 
@@ -118,11 +118,11 @@ describe("RAW SQL conditions and relation helpers", () => {
   })
 
   it("should combine RAW conditions with normal conditions using AND", async () => {
-        await db.insert(schema.users).values([
-          { id: 1, name: "Alice" },
-          { id: 2, name: "Bob" },
-          { id: 3, name: "Charlie" },
-        ])
+    await db.insert(schema.users).values([
+      { id: 1, name: "Alice" },
+      { id: 2, name: "Bob" },
+      { id: 3, name: "Charlie" },
+    ])
 
     type AllowedAction = "read"
 
@@ -152,11 +152,11 @@ describe("RAW SQL conditions and relation helpers", () => {
   })
 
   it("should support RAW in OR compounds", async () => {
-        await db.insert(schema.users).values([
-          { id: 1, name: "Alice" },
-          { id: 2, name: "Bob" },
-          { id: 3, name: "Charlie" },
-        ])
+    await db.insert(schema.users).values([
+      { id: 1, name: "Alice" },
+      { id: 2, name: "Bob" },
+      { id: 3, name: "Charlie" },
+    ])
 
     type AllowedAction = "read"
 

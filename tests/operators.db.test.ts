@@ -18,29 +18,29 @@ describe("Drizzle operators (DB)", () => {
   })
 
   it("should filter with all supported operators", async () => {
-        await db.insert(schema.simpleTable).values([
-          {
-            id: 1,
-            name: "Alpha",
-            note: null,
-            tags: ["red", "blue"],
-            nums: [1, 2, 3],
-          },
-          {
-            id: 2,
-            name: "Beta",
-            note: "note",
-            tags: ["green"],
-            nums: [3, 4],
-          },
-          {
-            id: 3,
-            name: "Gamma",
-            note: null,
-            tags: ["yellow"],
-            nums: [9],
-          },
-        ])
+    await db.insert(schema.simpleTable).values([
+      {
+        id: 1,
+        name: "Alpha",
+        note: null,
+        tags: ["red", "blue"],
+        nums: [1, 2, 3],
+      },
+      {
+        id: 2,
+        name: "Beta",
+        note: "note",
+        tags: ["green"],
+        nums: [3, 4],
+      },
+      {
+        id: 3,
+        name: "Gamma",
+        note: null,
+        tags: ["yellow"],
+        nums: [9],
+      },
+    ])
 
     type AllowedAction = "read" | "create" | "update" | "delete"
 

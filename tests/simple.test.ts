@@ -18,22 +18,22 @@ describe("Table without relations", () => {
   })
 
   it("filter test", async () => {
-        await db.insert(schema.simpleTable).values([
-          {
-            id: 1,
-            name: "Allowed Row",
-            note: null,
-            tags: ["red", "blue"],
-            nums: [1, 2, 3],
-          },
-          {
-            id: 2,
-            name: "Forbidden Row",
-            note: "blocked",
-            tags: ["green"],
-            nums: [3, 4],
-          },
-        ])
+    await db.insert(schema.simpleTable).values([
+      {
+        id: 1,
+        name: "Allowed Row",
+        note: null,
+        tags: ["red", "blue"],
+        nums: [1, 2, 3],
+      },
+      {
+        id: 2,
+        name: "Forbidden Row",
+        note: "blocked",
+        tags: ["green"],
+        nums: [3, 4],
+      },
+    ])
 
     type AllowedAction = "read" | "create" | "update" | "delete"
 

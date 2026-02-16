@@ -129,16 +129,16 @@ describe("relation helper functions (some, every, none)", () => {
     })
 
     it("variant 1: RAW with Drizzle function should filter posts", async () => {
-            await db.insert(schema.users).values([
-              { id: 1, name: "Alice" },
-              { id: 2, name: "Bob" },
-            ])
+      await db.insert(schema.users).values([
+        { id: 1, name: "Alice" },
+        { id: 2, name: "Bob" },
+      ])
 
-            await db.insert(schema.posts).values([
-              { id: 1, content: "Post 1", authorId: 1 },
-              { id: 2, content: "Post 2", authorId: 2 },
-              { id: 3, content: "Post 3", authorId: 1 },
-            ])
+      await db.insert(schema.posts).values([
+        { id: 1, content: "Post 1", authorId: 1 },
+        { id: 2, content: "Post 2", authorId: 2 },
+        { id: 3, content: "Post 3", authorId: 1 },
+      ])
 
       type AllowedAction = "read"
 
@@ -162,16 +162,16 @@ describe("relation helper functions (some, every, none)", () => {
     })
 
     it("variant 2: some() with raw SQL should filter posts by author name", async () => {
-            await db.insert(schema.users).values([
-              { id: 1, name: "Alice" },
-              { id: 2, name: "Bob" },
-            ])
+      await db.insert(schema.users).values([
+        { id: 1, name: "Alice" },
+        { id: 2, name: "Bob" },
+      ])
 
-            await db.insert(schema.posts).values([
-              { id: 1, content: "Post 1", authorId: 1 },
-              { id: 2, content: "Post 2", authorId: 2 },
-              { id: 3, content: "Post 3", authorId: 1 },
-            ])
+      await db.insert(schema.posts).values([
+        { id: 1, content: "Post 1", authorId: 1 },
+        { id: 2, content: "Post 2", authorId: 2 },
+        { id: 3, content: "Post 3", authorId: 1 },
+      ])
 
       type AllowedAction = "read"
 
@@ -195,16 +195,16 @@ describe("relation helper functions (some, every, none)", () => {
     })
 
     it("variant 3: some() with builder function should filter posts by author name", async () => {
-            await db.insert(schema.users).values([
-              { id: 1, name: "Alice" },
-              { id: 2, name: "Bob" },
-            ])
+      await db.insert(schema.users).values([
+        { id: 1, name: "Alice" },
+        { id: 2, name: "Bob" },
+      ])
 
-            await db.insert(schema.posts).values([
-              { id: 1, content: "Post 1", authorId: 1 },
-              { id: 2, content: "Post 2", authorId: 2 },
-              { id: 3, content: "Post 3", authorId: 1 },
-            ])
+      await db.insert(schema.posts).values([
+        { id: 1, content: "Post 1", authorId: 1 },
+        { id: 2, content: "Post 2", authorId: 2 },
+        { id: 3, content: "Post 3", authorId: 1 },
+      ])
 
       type AllowedAction = "read"
 
@@ -231,11 +231,11 @@ describe("relation helper functions (some, every, none)", () => {
     })
 
     it("all three variants should produce same results with users (odd IDs)", async () => {
-            await db.insert(schema.users).values([
-              { id: 1, name: "Alice" },
-              { id: 2, name: "Bob" },
-              { id: 3, name: "Charlie" },
-            ])
+      await db.insert(schema.users).values([
+        { id: 1, name: "Alice" },
+        { id: 2, name: "Bob" },
+        { id: 3, name: "Charlie" },
+      ])
 
       type AllowedAction = "read"
 
@@ -282,18 +282,18 @@ describe("relation helper functions (some, every, none)", () => {
     })
 
     it("should work with Drizzle operators in builder function", async () => {
-            await db.insert(schema.users).values([
-              { id: 1, name: "Alice" },
-              { id: 2, name: "Bob" },
-              { id: 3, name: "Charlie" },
-            ])
+      await db.insert(schema.users).values([
+        { id: 1, name: "Alice" },
+        { id: 2, name: "Bob" },
+        { id: 3, name: "Charlie" },
+      ])
 
-            await db.insert(schema.posts).values([
-              { id: 1, content: "Post 1", authorId: 1 },
-              { id: 2, content: "Post 2", authorId: 2 },
-              { id: 3, content: "Post 3", authorId: 3 },
-              { id: 4, content: "Post 4", authorId: 2 },
-            ])
+      await db.insert(schema.posts).values([
+        { id: 1, content: "Post 1", authorId: 1 },
+        { id: 2, content: "Post 2", authorId: 2 },
+        { id: 3, content: "Post 3", authorId: 3 },
+        { id: 4, content: "Post 4", authorId: 2 },
+      ])
 
       type AllowedAction = "read"
 
