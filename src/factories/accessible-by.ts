@@ -98,18 +98,19 @@ export const createAccessibleByFactory = <
   }
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function accessibleBy<TSubjectMap, TActions extends string = string>(
   ability: DrizzleAbility<TSubjectMap, TActions>,
   action?: TActions,
 ): Record<Extract<keyof TSubjectMap, string>, WhereInput>
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function accessibleBy<TAbility extends PureAbility<any, any>>(
   ability: TAbility,
   action?: TAbility["rules"][number]["action"],
 ): Record<string, WhereInput>
 export function accessibleBy(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   ability: PureAbility<any, any>,
-  action: string = "read",
+  action: string,
 ): Record<string, WhereInput> {
   return new Proxy(
     {
