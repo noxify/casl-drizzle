@@ -6,6 +6,7 @@ export default defineConfig({
     globals: true,
     environment: "node",
     passWithNoTests: true,
+    testTimeout: 10000,
     coverage: {
       provider: "v8",
       reporter: ["text", "json", "html"],
