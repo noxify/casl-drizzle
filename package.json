@@ -38,7 +38,7 @@
   "packageManager": "pnpm@10.29.2",
   "scripts": {
     "build": "tsdown",
-    "ci:publish": "pnpm build && pnpm publish -r --provenance --access public --publish-branch main && pnpm changeset tag",
+    "ci:publish": "pnpm build && pnpm publish -r --access public --publish-branch main && pnpm changeset tag",
     "ci:version": "pnpm changeset version && pnpm install --no-frozen-lockfile && git add .",
     "cs": "changeset",
     "format": "prettier --check . --ignore-path ./.gitignore --ignore-path ./.prettierignore",
