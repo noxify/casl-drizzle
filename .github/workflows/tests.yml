@@ -36,18 +36,7 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
-      - name: Setup Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v6
-        with:
-          node-version: ${{ matrix.node-version }}
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          run_install: false
-
-      - shell: bash
-        run: pnpm install
+      - uses: ./.github/setup
 
       - name: System & Environment Debug Info
         run: |
