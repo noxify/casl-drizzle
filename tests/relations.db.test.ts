@@ -20,32 +20,30 @@ describe("Relations (DB)", () => {
   let db: Awaited<ReturnType<typeof createDb>>
 
   beforeAll(async () => {
-    db = await createDb()
-  })
+    db = await createDb(async (dbClient) => {
+      // Insert users
+      await dbClient.insert(schema.users).values([
+        { id: 1, name: "Alice" },
+        { id: 2, name: "Bob" },
+        { id: 3, name: "Charlie" },
+      ])
 
-  beforeEach(async () => {
-    await resetDb(db)
+      // Insert posts
+      await dbClient.insert(schema.posts).values([
+        { id: 1, content: "Alice first post", authorId: 1 },
+        { id: 2, content: "Alice second post", authorId: 1 },
+        { id: 3, content: "Bob post", authorId: 2 },
+        { id: 4, content: "Charlie post", authorId: 3 },
+        { id: 5, content: "Post without author", authorId: null },
+      ])
 
-    // Insert seed data once for all tests
-    await db.insert(schema.users).values([
-      { id: 1, name: "Alice" },
-      { id: 2, name: "Bob" },
-      { id: 3, name: "Charlie" },
-    ])
-
-    await db.insert(schema.posts).values([
-      { id: 1, content: "Alice first post", authorId: 1 },
-      { id: 2, content: "Alice second post", authorId: 1 },
-      { id: 3, content: "Bob post", authorId: 2 },
-      { id: 4, content: "Charlie post", authorId: 3 },
-      { id: 5, content: "Post without author", authorId: null },
-    ])
-
-    await db.insert(schema.comments).values([
-      { id: 1, text: "Comment on Alice first", authorId: 2, postId: 1 },
-      { id: 2, text: "Another comment", authorId: 3, postId: 1 },
-      { id: 3, text: "Bob self-comment", authorId: 2, postId: 3 },
-    ])
+      // Insert comments
+      await dbClient.insert(schema.comments).values([
+        { id: 1, text: "Comment on Alice first", authorId: 2, postId: 1 },
+        { id: 2, text: "Another comment", authorId: 3, postId: 1 },
+        { id: 3, text: "Bob self-comment", authorId: 2, postId: 3 },
+      ])
+    })
   })
 
   type AllowedAction = "read" | "create" | "update" | "delete"
