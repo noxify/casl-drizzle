@@ -3,6 +3,8 @@ import type { PgliteDatabase } from "drizzle-orm/pglite"
 
 global.require = createRequire(import.meta.url)
 
+let cachedStatements: string[] | null = null
+
 /**
  * Run Drizzle migrations on PGlite database
  * Uses drizzle-kit to generate migrations from schema
@@ -12,25 +14,24 @@ export async function runMigrations<T extends Record<string, unknown>>(
   schema: T,
 ) {
   try {
-    const { generateDrizzleJson, generateMigration } = await import("drizzle-kit/api-postgres")
+    if (!cachedStatements) {
+      const { generateDrizzleJson, generateMigration } = await import("drizzle-kit/api-postgres")
 
-    // Generate migration from current schema
-    const [previous, current] = await Promise.all(
-      [{}, schema].map((schemaObject) => generateDrizzleJson(schemaObject)),
-    )
+      // Generate migration from current schema
+      const [previous, current] = await Promise.all(
+        [{}, schema].map((schemaObject) => generateDrizzleJson(schemaObject)),
+      )
 
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const statements = await generateMigration(previous!, current!)
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      cachedStatements = await generateMigration(previous!, current!)
+    }
 
     // PGlite requires splitting statements and executing them individually
-    for (const statement of statements) {
+    for (const statement of cachedStatements) {
       if (statement.trim()) {
         await db.execute(statement)
       }
     }
-
-    // eslint-disable-next-line no-console
-    console.log("✅ Migrations executed")
   } catch (err) {
     // eslint-disable-next-line no-console
     console.error("❌ Migration error:", err)
@@ -44,8 +45,6 @@ export async function seedDatabase<T extends Record<string, unknown>>(
 ) {
   try {
     await seedFn(db)
-    // eslint-disable-next-line no-console
-    console.log("✅ Seeds executed")
   } catch (err) {
     // eslint-disable-next-line no-console
     console.error("❌ Seed error:", err)

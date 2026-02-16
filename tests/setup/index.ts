@@ -1,2 +1,2 @@
 export { runMigrations, seedDatabase } from "./migrations"
-export { createDb } from "./test-db"
+export { createDb, resetDb } from "./test-db"

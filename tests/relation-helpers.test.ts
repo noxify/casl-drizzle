@@ -1,10 +1,10 @@
 import { sql } from "drizzle-orm"
-import { describe, expect, it } from "vitest"
+import { beforeAll, beforeEach, describe, expect, it } from "vitest"
 
 import type { QueryInput } from "../src"
 import type { relations } from "./setup/schema"
 import { accessibleBy, createDrizzleAbility, every, none, some } from "../src"
-import { createDb } from "./setup"
+import { createDb, resetDb } from "./setup"
 import { schema } from "./setup/schema"
 
 describe("relation helper functions (some, every, none)", () => {
@@ -118,25 +118,33 @@ describe("relation helper functions (some, every, none)", () => {
 
   // ==================== Integration Tests ====================
   describe("with real database queries", () => {
+    let db: Awaited<ReturnType<typeof createDb>>
+
+    beforeAll(async () => {
+      db = await createDb()
+    })
+
+    beforeEach(async () => {
+      await resetDb(db)
+    })
+
     it("variant 1: RAW with Drizzle function should filter posts", async () => {
+            await db.insert(schema.users).values([
+              { id: 1, name: "Alice" },
+              { id: 2, name: "Bob" },
+            ])
+
+            await db.insert(schema.posts).values([
+              { id: 1, content: "Post 1", authorId: 1 },
+              { id: 2, content: "Post 2", authorId: 2 },
+              { id: 3, content: "Post 3", authorId: 1 },
+            ])
+
       type AllowedAction = "read"
 
       interface SubjectMap {
         posts: QueryInput<typeof relations, "posts">
       }
-
-      const db = await createDb(async (db) => {
-        await db.insert(schema.users).values([
-          { id: 1, name: "Alice" },
-          { id: 2, name: "Bob" },
-        ])
-
-        await db.insert(schema.posts).values([
-          { id: 1, content: "Post 1", authorId: 1 },
-          { id: 2, content: "Post 2", authorId: 2 },
-          { id: 3, content: "Post 3", authorId: 1 },
-        ])
-      })
 
       const ability = createDrizzleAbility<SubjectMap, AllowedAction>((can) => {
         can("read", "posts", {
@@ -154,24 +162,22 @@ describe("relation helper functions (some, every, none)", () => {
     })
 
     it("variant 2: some() with raw SQL should filter posts by author name", async () => {
+            await db.insert(schema.users).values([
+              { id: 1, name: "Alice" },
+              { id: 2, name: "Bob" },
+            ])
+
+            await db.insert(schema.posts).values([
+              { id: 1, content: "Post 1", authorId: 1 },
+              { id: 2, content: "Post 2", authorId: 2 },
+              { id: 3, content: "Post 3", authorId: 1 },
+            ])
+
       type AllowedAction = "read"
 
       interface SubjectMap {
         posts: QueryInput<typeof relations, "posts">
       }
-
-      const db = await createDb(async (db) => {
-        await db.insert(schema.users).values([
-          { id: 1, name: "Alice" },
-          { id: 2, name: "Bob" },
-        ])
-
-        await db.insert(schema.posts).values([
-          { id: 1, content: "Post 1", authorId: 1 },
-          { id: 2, content: "Post 2", authorId: 2 },
-          { id: 3, content: "Post 3", authorId: 1 },
-        ])
-      })
 
       const ability = createDrizzleAbility<SubjectMap, AllowedAction>((can) => {
         can("read", "posts", {
@@ -189,24 +195,22 @@ describe("relation helper functions (some, every, none)", () => {
     })
 
     it("variant 3: some() with builder function should filter posts by author name", async () => {
+            await db.insert(schema.users).values([
+              { id: 1, name: "Alice" },
+              { id: 2, name: "Bob" },
+            ])
+
+            await db.insert(schema.posts).values([
+              { id: 1, content: "Post 1", authorId: 1 },
+              { id: 2, content: "Post 2", authorId: 2 },
+              { id: 3, content: "Post 3", authorId: 1 },
+            ])
+
       type AllowedAction = "read"
 
       interface SubjectMap {
         posts: QueryInput<typeof relations, "posts">
       }
-
-      const db = await createDb(async (db) => {
-        await db.insert(schema.users).values([
-          { id: 1, name: "Alice" },
-          { id: 2, name: "Bob" },
-        ])
-
-        await db.insert(schema.posts).values([
-          { id: 1, content: "Post 1", authorId: 1 },
-          { id: 2, content: "Post 2", authorId: 2 },
-          { id: 3, content: "Post 3", authorId: 1 },
-        ])
-      })
 
       const authorName = "Alice"
 
@@ -227,19 +231,17 @@ describe("relation helper functions (some, every, none)", () => {
     })
 
     it("all three variants should produce same results with users (odd IDs)", async () => {
+            await db.insert(schema.users).values([
+              { id: 1, name: "Alice" },
+              { id: 2, name: "Bob" },
+              { id: 3, name: "Charlie" },
+            ])
+
       type AllowedAction = "read"
 
       interface SubjectMap {
         users: QueryInput<typeof relations, "users">
       }
-
-      const db = await createDb(async (db) => {
-        await db.insert(schema.users).values([
-          { id: 1, name: "Alice" },
-          { id: 2, name: "Bob" },
-          { id: 3, name: "Charlie" },
-        ])
-      })
 
       // Variant 1: RAW with function
       const ability1 = createDrizzleAbility<SubjectMap, AllowedAction>((can) => {
@@ -280,26 +282,24 @@ describe("relation helper functions (some, every, none)", () => {
     })
 
     it("should work with Drizzle operators in builder function", async () => {
+            await db.insert(schema.users).values([
+              { id: 1, name: "Alice" },
+              { id: 2, name: "Bob" },
+              { id: 3, name: "Charlie" },
+            ])
+
+            await db.insert(schema.posts).values([
+              { id: 1, content: "Post 1", authorId: 1 },
+              { id: 2, content: "Post 2", authorId: 2 },
+              { id: 3, content: "Post 3", authorId: 3 },
+              { id: 4, content: "Post 4", authorId: 2 },
+            ])
+
       type AllowedAction = "read"
 
       interface SubjectMap {
         posts: QueryInput<typeof relations, "posts">
       }
-
-      const db = await createDb(async (db) => {
-        await db.insert(schema.users).values([
-          { id: 1, name: "Alice" },
-          { id: 2, name: "Bob" },
-          { id: 3, name: "Charlie" },
-        ])
-
-        await db.insert(schema.posts).values([
-          { id: 1, content: "Post 1", authorId: 1 },
-          { id: 2, content: "Post 2", authorId: 2 },
-          { id: 3, content: "Post 3", authorId: 3 },
-          { id: 4, content: "Post 4", authorId: 2 },
-        ])
-      })
 
       const ability = createDrizzleAbility<SubjectMap, AllowedAction>((can) => {
         // Using Drizzle operators in builder function

@@ -1,44 +1,52 @@
-import { describe, expect, it } from "vitest"
+import { beforeAll, beforeEach, describe, expect, it } from "vitest"
 
 import type { QueryInput } from "../src"
 import type { relations } from "./setup/schema"
 import { accessibleBy, createDrizzleAbility } from "../src"
-import { createDb } from "./setup"
+import { createDb, resetDb } from "./setup"
 import { schema } from "./setup/schema"
 
 describe("Drizzle operators (DB)", () => {
+  let db: Awaited<ReturnType<typeof createDb>>
+
+  beforeAll(async () => {
+    db = await createDb()
+  })
+
+  beforeEach(async () => {
+    await resetDb(db)
+  })
+
   it("should filter with all supported operators", async () => {
+        await db.insert(schema.simpleTable).values([
+          {
+            id: 1,
+            name: "Alpha",
+            note: null,
+            tags: ["red", "blue"],
+            nums: [1, 2, 3],
+          },
+          {
+            id: 2,
+            name: "Beta",
+            note: "note",
+            tags: ["green"],
+            nums: [3, 4],
+          },
+          {
+            id: 3,
+            name: "Gamma",
+            note: null,
+            tags: ["yellow"],
+            nums: [9],
+          },
+        ])
+
     type AllowedAction = "read" | "create" | "update" | "delete"
 
     interface SubjectMap {
       simpleTable: QueryInput<typeof relations, "simpleTable">
     }
-
-    const db = await createDb(async (db) => {
-      await db.insert(schema.simpleTable).values([
-        {
-          id: 1,
-          name: "Alpha",
-          note: null,
-          tags: ["red", "blue"],
-          nums: [1, 2, 3],
-        },
-        {
-          id: 2,
-          name: "Beta",
-          note: "note",
-          tags: ["green"],
-          nums: [3, 4],
-        },
-        {
-          id: 3,
-          name: "Gamma",
-          note: null,
-          tags: ["yellow"],
-          nums: [9],
-        },
-      ])
-    })
 
     const queryFor = async (condition: SubjectMap["simpleTable"]) => {
       const ability = createDrizzleAbility<SubjectMap, AllowedAction>((can) => {

@@ -23,3 +23,12 @@ export async function createDb(seedFn?: SeedFn) {
 
   return db
 }
+
+const TABLE_NAMES = ["users", "posts", "comments", "groups", "users_to_groups", "simple_table"]
+
+/**
+ * Reset all tables between tests to keep a single DB instance isolated.
+ */
+export async function resetDb(db: Awaited<ReturnType<typeof createDb>>) {
+  await db.execute(`TRUNCATE TABLE ${TABLE_NAMES.join(", ")} RESTART IDENTITY CASCADE`)
+}
