@@ -1,6 +1,14 @@
 import { defineRelations } from "drizzle-orm"
 import * as p from "drizzle-orm/pg-core"
 
+export const simpleTable = p.pgTable("simple_table", {
+  id: p.integer().primaryKey(),
+  name: p.text().notNull(),
+  note: p.text(),
+  tags: p.text().array().notNull(),
+  nums: p.integer().array().notNull(),
+})
+
 export const users = p.pgTable("users", {
   id: p.integer().primaryKey(),
   name: p.text().notNull(),
@@ -47,7 +55,7 @@ export const usersToGroups = p.pgTable(
 )
 
 export const relations = defineRelations(
-  { users, posts, comments, groups, usersToGroups },
+  { simpleTable, users, posts, comments, groups, usersToGroups },
   (r) => ({
     posts: {
       author: r.one.users({
@@ -75,4 +83,4 @@ export const relations = defineRelations(
   }),
 )
 
-export const schema = { users, posts, comments, groups, usersToGroups }
+export const schema = { users, posts, comments, groups, usersToGroups, simpleTable }

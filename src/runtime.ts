@@ -5,7 +5,7 @@ export { createAbilityFactory } from "./factories/create-ability"
 export { ParsingQueryError } from "./query-error"
 
 // Public API types
-export type { RelationalQueryInput, QueryInput, Subjects, DefineAbility } from "./types"
+export type { QueryInput, Subjects, DefineDrizzleAbility } from "./types"
 
 // Internal types (exported for use by createDrizzleAbilityFor, but not part of public API)
 export type { DrizzleQueryFactory, DrizzleModel, BaseDrizzleQuery, WhereInput } from "./types"

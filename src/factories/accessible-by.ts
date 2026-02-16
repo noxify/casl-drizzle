@@ -2,7 +2,7 @@ import type { AnyAbility, PureAbility } from "@casl/ability"
 import { ForbiddenError } from "@casl/ability"
 import { rulesToQuery } from "@casl/ability/extra"
 
-import type { WhereInput } from "../types"
+import type { DrizzleAbility, WhereInput } from "../types"
 
 function normalizeDrizzleConditions(obj: unknown): unknown {
   if (typeof obj !== "object" || obj === null) {
@@ -99,9 +99,17 @@ export const createAccessibleByFactory = <
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function accessibleBy<TSubjectMap, TActions extends string = string>(
+  ability: DrizzleAbility<TSubjectMap, TActions>,
+  action?: TActions,
+): Record<Extract<keyof TSubjectMap, string>, WhereInput>
 export function accessibleBy<TAbility extends PureAbility<any, any>>(
   ability: TAbility,
-  action: TAbility["rules"][number]["action"] = "read",
+  action?: TAbility["rules"][number]["action"],
+): Record<string, WhereInput>
+export function accessibleBy(
+  ability: PureAbility<any, any>,
+  action: string = "read",
 ): Record<string, WhereInput> {
   return new Proxy(
     {

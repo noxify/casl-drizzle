@@ -1,34 +1,36 @@
 import { createRequire } from "module"
-import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
+import type { PgliteDatabase } from "drizzle-orm/pglite"
 
 global.require = createRequire(import.meta.url)
 
 /**
- * Führt Drizzle Migrations aus
- * Nutzt drizzle-kit um aus dem Schema Migrations zu generieren
+ * Run Drizzle migrations on PGlite database
+ * Uses drizzle-kit to generate migrations from schema
  */
 export async function runMigrations<T extends Record<string, unknown>>(
-  db: PostgresJsDatabase<T>,
+  db: PgliteDatabase<T>,
   schema: T,
 ) {
   try {
     const { generateDrizzleJson, generateMigration } = await import("drizzle-kit/api-postgres")
 
-    // Generiere die Migration vom aktuellen Schema
+    // Generate migration from current schema
     const [previous, current] = await Promise.all(
       [{}, schema].map((schemaObject) => generateDrizzleJson(schemaObject)),
     )
 
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const statements = await generateMigration(previous!, current!)
-    const migration = statements.join("\n")
 
-    // Execute the migration
-    if (migration.trim()) {
-      await db.execute(migration)
-      // eslint-disable-next-line no-console
-      console.log("✅ Migrations executed")
+    // PGlite requires splitting statements and executing them individually
+    for (const statement of statements) {
+      if (statement.trim()) {
+        await db.execute(statement)
+      }
     }
+
+    // eslint-disable-next-line no-console
+    console.log("✅ Migrations executed")
   } catch (err) {
     // eslint-disable-next-line no-console
     console.error("❌ Migration error:", err)
@@ -37,8 +39,8 @@ export async function runMigrations<T extends Record<string, unknown>>(
 }
 
 export async function seedDatabase<T extends Record<string, unknown>>(
-  db: PostgresJsDatabase<T>,
-  seedFn: (db: PostgresJsDatabase<T>) => Promise<void>,
+  db: PgliteDatabase<T>,
+  seedFn: (db: PgliteDatabase<T>) => Promise<void>,
 ) {
   try {
     await seedFn(db)

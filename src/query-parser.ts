@@ -25,7 +25,7 @@ const isPlainObject = (value: unknown): value is Record<string, unknown> => {
   )
 }
 
-const equals: FieldInstruction = {
+const eq: FieldInstruction = {
   type: "field",
   validate(instruction, value) {
     if (Array.isArray(value) || isPlainObject(value)) {
@@ -33,6 +33,14 @@ const equals: FieldInstruction = {
         `"${instruction.name}" does not supports comparison of arrays and objects`,
       )
     }
+  },
+}
+
+const ne: FieldInstruction = {
+  type: "field",
+  validate: void eq.validate,
+  parse(_, value, { field }) {
+    return new FieldCondition("notEquals", field, value)
   },
 }
 
@@ -110,6 +118,22 @@ const compareString: FieldInstruction<string, StringFieldContext> = {
   },
 }
 
+const compareLike: FieldInstruction<string, StringFieldContext> = {
+  type: "field",
+  validate(instruction, value) {
+    if (typeof value !== "string") {
+      throw ParsingQueryError.invalidArgument(instruction.name, value, "string")
+    }
+  },
+  parse(instruction, value, { query, field }) {
+    if (instruction.name === "ilike" || query.mode === "insensitive") {
+      return new FieldCondition("ilike", field, value)
+    }
+
+    return new FieldCondition("like", field, value)
+  },
+}
+
 const compound: CompoundInstruction = {
   type: "compound",
   validate(instruction, value) {
@@ -138,6 +162,15 @@ const has: FieldInstruction<unknown> = {
 }
 
 const hasSome: FieldInstruction<unknown[]> = {
+  type: "field",
+  validate(instruction, value) {
+    if (!Array.isArray(value)) {
+      throw ParsingQueryError.invalidArgument(instruction.name, value, "an array")
+    }
+  },
+}
+
+const arrayField: FieldInstruction<unknown[]> = {
   type: "field",
   validate(instruction, value) {
     if (!Array.isArray(value)) {
@@ -189,7 +222,8 @@ const inverted = (name: string, baseInstruction: FieldInstruction): FieldInstruc
 }
 
 const instructions = {
-  equals,
+  eq,
+  ne,
   not,
   in: within,
   notIn: inverted("in", within),
@@ -208,10 +242,29 @@ const instructions = {
   startsWith: compareString,
   endsWith: compareString,
   contains: compareString,
+  like: compareLike,
+  ilike: compareLike,
+  notLike: {
+    type: "field",
+    parse: ((_, value, { field, parse }) => {
+      return new CompoundCondition("NOT", [parse({ like: value }, { field })])
+    }) as FieldInstruction<unknown, ObjectQueryFieldParsingContext>["parse"],
+  },
+  notIlike: {
+    type: "field",
+    parse: ((_, value, { field, parse }) => {
+      return new CompoundCondition("NOT", [parse({ ilike: value }, { field })])
+    }) as FieldInstruction<unknown, ObjectQueryFieldParsingContext>["parse"],
+  },
+  isNull: booleanField,
+  isNotNull: booleanField,
   isEmpty: booleanField,
   has,
   hasSome,
   hasEvery: hasSome,
+  arrayOverlaps: arrayField,
+  arrayContained: arrayField,
+  arrayContains: arrayField,
   NOT: compound,
   AND: compound,
   OR: compound,
@@ -231,17 +284,40 @@ export class DrizzleQueryParser extends ObjectQueryParser<Record<string, unknown
   constructor() {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     super(instructions as any, {
-      defaultOperatorName: "equals",
+      defaultOperatorName: "eq",
     })
   }
 
-  parse(query: Record<string, unknown>, options?: ParseOptions): Condition {
-    if (options?.field) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      return buildAnd((this.parseFieldOperators as any)(options.field, query))
+  private normalizeEqOperator(value: unknown): unknown {
+    if (Array.isArray(value)) {
+      return value.map((item) => this.normalizeEqOperator(item))
     }
 
-    return super.parse(query)
+    if (!isPlainObject(value)) {
+      return value
+    }
+
+    const keys = Object.keys(value)
+    if (keys.length === 1 && keys[0] === "eq") {
+      return this.normalizeEqOperator(value.eq)
+    }
+
+    const normalized: Record<string, unknown> = {}
+    for (const [key, entry] of Object.entries(value)) {
+      normalized[key] = this.normalizeEqOperator(entry)
+    }
+
+    return normalized
+  }
+
+  parse(query: Record<string, unknown>, options?: ParseOptions): Condition {
+    const normalizedQuery = this.normalizeEqOperator(query) as Record<string, unknown>
+    if (options?.field) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      return buildAnd((this.parseFieldOperators as any)(options.field, normalizedQuery))
+    }
+
+    return super.parse(normalizedQuery)
   }
 }
 

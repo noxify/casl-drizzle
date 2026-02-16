@@ -7,7 +7,7 @@ CASL integration for Drizzle ORM - Add type-safe authorization to your database 
 ## Install
 
 ```sh
-npm install ucastle @casl/ability
+npm install @noxify/casl-drizzle @casl/ability
 ```
 
 ## Quick Start
@@ -15,9 +15,9 @@ npm install ucastle @casl/ability
 Define your abilities using Drizzle's query types directly:
 
 ```typescript
-import type { QueryInput } from "ucastle"
+import type { QueryInput } from "@noxify/casl-drizzle"
+import { accessibleBy, defineAbility } from "@noxify/casl-drizzle"
 import { integer, pgTable, text } from "drizzle-orm/pg-core"
-import { accessibleBy, defineAbility } from "ucastle"
 
 // Define your Drizzle schema
 const users = pgTable("users", {
@@ -48,16 +48,16 @@ const readableUsers = await db.query.users.findMany({ where: filters.users })
 - 🔒 **Type-safe authorization** - Full TypeScript support with Drizzle types
 - 🎯 **CASL integration** - Leverage CASL's powerful rule system
 - 🗄️ **DB agnostic** - Works with PostgreSQL, MySQL, SQLite, etc.
-- 🔗 **Relation support** - Filter by related table conditions
+- 🔗 **Relation support** - Filter by related table conditions with Drizzle RQB v2
 - 📦 **Zero overhead** - Direct type composition, no runtime wrappers
 - 💡 **Smart autocomplete** - Subject-specific field suggestions with `defineAbility()`
 
-## With Relations
+## Usage with Relations
 
-For schemas with relations, use `RelationalQueryInput`:
+With Drizzle RQB v2, use `QueryInput` for full operator support:
 
 ```typescript
-import type { RelationalQueryInput } from "ucastle"
+import type { QueryInput } from "@noxify/casl-drizzle"
 import { defineRelations } from "drizzle-orm"
 
 const posts = pgTable("posts", {
@@ -71,7 +71,7 @@ const relations = defineRelations({ users, posts }, (r) => ({
   posts: { author: r.one(users, { fields: [posts.authorId], references: [users.id] }) },
 }))
 
-type PostQuery = RelationalQueryInput<typeof relations, "posts">
+type PostQuery = QueryInput<typeof relations, "posts">
 
 const ability = defineAbility<{ posts: PostQuery }>((can) => {
   can("read", "posts", { published: true })
@@ -84,9 +84,9 @@ const ability = defineAbility<{ posts: PostQuery }>((can) => {
 If you prefer the traditional AbilityBuilder pattern:
 
 ```typescript
-import type { DefineAbility } from "ucastle"
+import type { DefineAbility } from "@noxify/casl-drizzle"
 import { AbilityBuilder } from "@casl/ability"
-import { createDrizzleAbilityFor } from "ucastle"
+import { createDrizzleAbilityFor } from "@noxify/casl-drizzle"
 
 type AppAbility = DefineAbility<{ users: UserQuery }>
 

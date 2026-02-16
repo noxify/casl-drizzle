@@ -37,6 +37,30 @@ const icontains: StringInterpreter = (condition, object, { get }): boolean => {
     .includes(condition.value.toLowerCase())
 }
 
+const likeToRegExp = (pattern: string): RegExp => {
+  const escaped = pattern.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+  const regex = `^${escaped.replace(/%/g, ".*").replace(/_/g, ".")}$`
+  return new RegExp(regex)
+}
+
+const like: StringInterpreter = (condition, object, { get }): boolean => {
+  const value = get(object, condition.field)
+  if (typeof value !== "string") {
+    return false
+  }
+
+  return likeToRegExp(condition.value).test(value)
+}
+
+const ilike: StringInterpreter = (condition, object, { get }): boolean => {
+  const value = get(object, condition.field)
+  if (typeof value !== "string") {
+    return false
+  }
+
+  return likeToRegExp(condition.value.toLowerCase()).test(value.toLowerCase())
+}
+
 type ArrayInterpreter<
   TConditionValue,
   TValue extends Record<string, unknown[]> = Record<string, unknown[]>,
@@ -65,6 +89,21 @@ const hasSome: ArrayInterpreter<unknown[]> = (condition, object, { get }): boole
 const hasEvery: ArrayInterpreter<unknown[]> = (condition, object, { get }): boolean => {
   const value = get(object, condition.field) as unknown[]
   return Array.isArray(value) && condition.value.every((v) => value.includes(v))
+}
+
+const arrayOverlaps: ArrayInterpreter<unknown[]> = (condition, object, { get }): boolean => {
+  const value = get(object, condition.field) as unknown[]
+  return Array.isArray(value) && condition.value.some((v) => value.includes(v))
+}
+
+const arrayContains: ArrayInterpreter<unknown[]> = (condition, object, { get }): boolean => {
+  const value = get(object, condition.field) as unknown[]
+  return Array.isArray(value) && condition.value.every((v) => value.includes(v))
+}
+
+const arrayContained: ArrayInterpreter<unknown[]> = (condition, object, { get }): boolean => {
+  const value = get(object, condition.field) as unknown[]
+  return Array.isArray(value) && value.every((v) => condition.value.includes(v))
 }
 
 const every: (
@@ -125,12 +164,32 @@ const not: (
 
 const isSet: (
   this: void,
-  condition: FieldCondition<Condition>,
+  condition: FieldCondition<boolean>,
   object: Record<string, unknown>,
   context: { get: (obj: unknown, field: string) => unknown },
 ) => boolean = (condition, object, { get }): boolean => {
   const item = get(object, condition.field)
-  return item !== undefined
+  return (item !== undefined) === condition.value
+}
+
+const isNull: (
+  this: void,
+  condition: FieldCondition<boolean>,
+  object: Record<string, unknown>,
+  context: { get: (obj: unknown, field: string) => unknown },
+) => boolean = (condition, object, { get }): boolean => {
+  const item = get(object, condition.field)
+  return (item === null) === condition.value
+}
+
+const isNotNull: (
+  this: void,
+  condition: FieldCondition<boolean>,
+  object: Record<string, unknown>,
+  context: { get: (obj: unknown, field: string) => unknown },
+) => boolean = (condition, object, { get }): boolean => {
+  const item = get(object, condition.field)
+  return (item !== null) === condition.value
 }
 
 function toComparable(value: unknown) {
@@ -142,6 +201,7 @@ const compareValues: typeof compare = (a, b) => compare(toComparable(a), toCompa
 export const interpretDrizzleQuery = createJsInterpreter(
   {
     // TODO: support arrays and objects comparison
+    eq,
     equals: eq,
     notEquals: ne,
     in: within,
@@ -155,10 +215,15 @@ export const interpretDrizzleQuery = createJsInterpreter(
     iendsWith,
     contains,
     icontains,
+    like,
+    ilike,
     isEmpty,
     has,
     hasSome,
     hasEvery,
+    arrayOverlaps,
+    arrayContained,
+    arrayContains,
     and,
     or,
     AND: and,
@@ -168,6 +233,8 @@ export const interpretDrizzleQuery = createJsInterpreter(
     some,
     is,
     isSet,
+    isNull,
+    isNotNull,
   },
   {
     get: (object: Record<string, unknown>, field: string): unknown => object[field],
