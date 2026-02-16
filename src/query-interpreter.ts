@@ -196,6 +196,13 @@ function toComparable(value: unknown) {
   return value && typeof value === "object" ? value.valueOf() : value
 }
 
+/**
+ * RAW SQL conditions can't be evaluated in JavaScript.
+ * In DB context, they're passed through by accessibleBy().
+ * In JS context (tests), we return true to allow the condition through.
+ */
+const raw: typeof and = () => true
+
 const compareValues: typeof compare = (a, b) => compare(toComparable(a), toComparable(b))
 
 export const interpretDrizzleQuery = createJsInterpreter(
@@ -235,6 +242,7 @@ export const interpretDrizzleQuery = createJsInterpreter(
     isSet,
     isNull,
     isNotNull,
+    RAW: raw,
   },
   {
     get: (object: Record<string, unknown>, field: string): unknown => object[field],

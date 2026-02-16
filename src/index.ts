@@ -5,7 +5,7 @@ import type { DrizzleQueryFactory } from "./runtime"
 import type { DefineDrizzleAbility, DrizzleAbility } from "./types"
 import { createAbilityFactory } from "./runtime"
 
-export { accessibleBy, ParsingQueryError, drizzleQuery } from "./runtime"
+export { accessibleBy, ParsingQueryError, drizzleQuery, some, every, none } from "./runtime"
 export type * from "./runtime"
 
 /**

@@ -22,6 +22,12 @@ function normalizeDrizzleConditions(obj: unknown): unknown {
       continue
     }
 
+    // Handle RAW SQL conditions - pass through as-is
+    if (key === "RAW") {
+      result[key] = value
+      continue
+    }
+
     // Handle operators with $ prefix - remove the $ and recurse
     if (key.startsWith("$")) {
       const normalizedKey = key.substring(1)

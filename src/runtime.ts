@@ -3,6 +3,7 @@ export type { Model, Subjects as DrizzleSubjects, ExtractModelName } from "./dri
 export { createAccessibleByFactory, accessibleBy } from "./factories/accessible-by"
 export { createAbilityFactory } from "./factories/create-ability"
 export { ParsingQueryError } from "./query-error"
+export { some, every, none } from "./factories/relation-helpers"
 
 // Public API types
 export type { QueryInput, Subjects, DefineDrizzleAbility } from "./types"

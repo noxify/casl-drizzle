@@ -46,33 +46,17 @@ export type DrizzleModel = Model<Record<string, unknown>, string>
 export type WhereInput = Record<string, unknown>
 
 /**
- * Utility type to recursively remove the RAW property from Drizzle query types.
- * RAW is used internally by Drizzle for SQL functions but shouldn't be exposed in our public API.
- * This type walks through the structure and omits RAW properties at all levels.
- * @internal
- */
-type OmitRaw<T> = T extends object
-  ? {
-      [K in keyof T as K extends "RAW" ? never : K]: T[K] extends object
-        ? // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          T[K] extends any[]
-          ? OmitRaw<T[K][number]>[]
-          : OmitRaw<T[K]>
-        : T[K]
-    }
-  : T
-
-/**
  * Typed query input for Drizzle tables with full operator support.
  * Extracts the complete query type from Drizzle's RQB v2, including all field operators
- * (comparison, membership, string, null, relation, and compound operators) and nested relations.
+ * (comparison, membership, string, null, relation, and compound operators), nested relations,
+ * and raw SQL conditions.
  *
  * @template TSchema - The Drizzle relations configuration object
  * @template TTableName - The key of the table within TSchema
  *
  * @example
  * ```ts
- * import { relations } from "drizzle-orm"
+ * import { relations, sql } from "drizzle-orm"
  * import type { QueryInput } from "@noxify/casl-drizzle"
  *
  * const relations = defineRelations({ users, posts }, (r) => ({
@@ -85,21 +69,37 @@ type OmitRaw<T> = T extends object
  * const ability = defineAbility<{ posts: PostQuery }>((can) => {
  *   can("read", "posts", { published: true })
  *   can("update", "posts", { authorId: 1 })
+ *   // Raw SQL for complex conditions
+ *   can("delete", "posts", {
+ *     RAW: sql`EXISTS (SELECT 1 FROM contributors WHERE post_id = posts.id)`
+ *   })
  * })
  * ```
  */
 export type QueryInput<
   TSchema extends TablesRelationalConfig,
   TTableName extends keyof TSchema,
-> = OmitRaw<
-  Exclude<
-    KnownKeysOnly<
-      DBQueryConfig<"many", TSchema, TSchema[TTableName]>,
-      DBQueryConfig<"many", TSchema, TSchema[TTableName]>
-    >["where"],
-    undefined
-  >
->
+> = Exclude<
+  KnownKeysOnly<
+    DBQueryConfig<"many", TSchema, TSchema[TTableName]>,
+    DBQueryConfig<"many", TSchema, TSchema[TTableName]>
+  >["where"],
+  undefined
+> & {
+  /**
+   * Optional raw SQL condition for complex queries that can't be expressed with field operators.
+   * The SQL template literal will be passed directly to Drizzle's where clause.
+   *
+   * @example
+   * ```ts
+   * { RAW: sql`${table.age} BETWEEN 25 AND 35` }
+   * { RAW: sql`EXISTS (SELECT 1 FROM related WHERE ...)` }
+   * ```
+   *
+   * @warning Ensure the SQL is properly parameterized to prevent SQL injection.
+   */
+  RAW?: unknown
+}
 
 /**
  * Creates a union of all possible CASL subjects from a query type mapping.

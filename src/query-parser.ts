@@ -221,6 +221,14 @@ const inverted = (name: string, baseInstruction: FieldInstruction): FieldInstruc
   }
 }
 
+const raw: FieldInstruction<unknown> = {
+  type: "field",
+  parse(_, value) {
+    // RAW SQL is passed through as-is, will be handled in accessibleBy
+    return new FieldCondition("RAW", "RAW", value)
+  },
+}
+
 const instructions = {
   eq,
   ne,
@@ -274,6 +282,7 @@ const instructions = {
   is: relation,
   isNot: inverted("is", relation),
   isSet: booleanField,
+  RAW: raw,
 }
 
 export interface ParseOptions {
