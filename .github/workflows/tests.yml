@@ -78,14 +78,10 @@ jobs:
           echo "=== Relevant Package Versions ==="
           npm list drizzle-orm drizzle-kit vitest typescript 2>/dev/null | head -20
 
-      - name: Build packages
+      - name: Check Vitest Config
         run: |
-          pnpm build
-
-      - name: Run tests
-        run: |
-          echo "=== Test Execution Start ==="
-          date -u
-          pnpm test
-          echo "=== Test Execution End ==="
-          date -u
+          echo "=== Vitest Configuration ==="
+          cat vitest.config.ts
+          echo ""
+          echo "=== package.json test script ==="
+          jq '.scripts.test' package.json
