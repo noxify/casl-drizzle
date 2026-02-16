@@ -49,9 +49,43 @@ jobs:
       - shell: bash
         run: pnpm install
 
+      - name: System & Environment Debug Info
+        run: |
+          echo "=== OS & Hardware ==="
+          uname -a
+          echo "CPU Count: $(nproc)"
+          echo "Memory: $(free -h)"
+          echo "Disk Space:"
+          df -h
+
+          echo ""
+          echo "=== Node & Package Management ==="
+          node --version
+          npm --version
+          pnpm --version
+          which node
+          which pnpm
+
+          echo ""
+          echo "=== Environment Variables ==="
+          echo "NODE_OPTIONS: ${NODE_OPTIONS:-not set}"
+          echo "NODE_ENV: ${NODE_ENV:-not set}"
+          echo "CI: ${CI:-not set}"
+          echo "RUNNER_OS: ${RUNNER_OS:-not set}"
+          echo "RUNNER_ARCH: ${RUNNER_ARCH:-not set}"
+
+          echo ""
+          echo "=== Relevant Package Versions ==="
+          npm list drizzle-orm drizzle-kit vitest typescript 2>/dev/null | head -20
+
       - name: Build packages
         run: |
           pnpm build
 
       - name: Run tests
-        run: pnpm test
+        run: |
+          echo "=== Test Execution Start ==="
+          date -u
+          pnpm test
+          echo "=== Test Execution End ==="
+          date -u
