@@ -1,82 +1,84 @@
-import { beforeAll, beforeEach, describe, expect, it } from "vitest"
+import { beforeAll, describe, expect, it } from "vitest"
 
 import type { QueryInput } from "../src"
 import type { relations } from "./setup/schema"
 import { accessibleBy, createDrizzleAbility } from "../src"
-import { createDb, resetDb } from "./setup"
+import { createDb } from "./setup"
 import { schema } from "./setup/schema"
 
 describe("Drizzle operators (DB)", () => {
   let db: Awaited<ReturnType<typeof createDb>>
 
   beforeAll(async () => {
-    db = await createDb()
+    db = await createDb(async (dbClient) => {
+      await dbClient.insert(schema.simpleTable).values([
+        {
+          id: 1,
+          name: "Alpha",
+          note: null,
+          tags: ["red", "blue"],
+          nums: [1, 2, 3],
+        },
+        {
+          id: 2,
+          name: "Beta",
+          note: "note",
+          tags: ["green"],
+          nums: [3, 4],
+        },
+        {
+          id: 3,
+          name: "Gamma",
+          note: null,
+          tags: ["yellow"],
+          nums: [9],
+        },
+      ])
+    })
   })
 
-  beforeEach(async () => {
-    await resetDb(db)
-  })
+  type AllowedAction = "read" | "create" | "update" | "delete"
 
-  it("should filter with all supported operators", async () => {
-    await db.insert(schema.simpleTable).values([
-      {
-        id: 1,
-        name: "Alpha",
-        note: null,
-        tags: ["red", "blue"],
-        nums: [1, 2, 3],
-      },
-      {
-        id: 2,
-        name: "Beta",
-        note: "note",
-        tags: ["green"],
-        nums: [3, 4],
-      },
-      {
-        id: 3,
-        name: "Gamma",
-        note: null,
-        tags: ["yellow"],
-        nums: [9],
-      },
-    ])
+  interface SubjectMap {
+    simpleTable: QueryInput<typeof relations, "simpleTable">
+  }
 
-    type AllowedAction = "read" | "create" | "update" | "delete"
+  const queryFor = async (condition: SubjectMap["simpleTable"]) => {
+    const ability = createDrizzleAbility<SubjectMap, AllowedAction>((can) => {
+      can("read", "simpleTable", condition)
+    })
 
-    interface SubjectMap {
-      simpleTable: QueryInput<typeof relations, "simpleTable">
-    }
+    const where = accessibleBy(ability, "read").simpleTable
+    const rows = await db.query.simpleTable.findMany({ where })
+    return rows.map((row) => row.id).sort((a, b) => a - b)
+  }
 
-    const queryFor = async (condition: SubjectMap["simpleTable"]) => {
-      const ability = createDrizzleAbility<SubjectMap, AllowedAction>((can) => {
-        can("read", "simpleTable", condition)
-      })
+  const cases = [
+    { field: "id", operator: "eq", value: 1, expected: [1] },
+    { field: "id", operator: "ne", value: 2, expected: [1, 3] },
+    { field: "id", operator: "gt", value: 1, expected: [2, 3] },
+    { field: "id", operator: "gte", value: 2, expected: [2, 3] },
+    { field: "id", operator: "lt", value: 3, expected: [1, 2] },
+    { field: "id", operator: "lte", value: 2, expected: [1, 2] },
+    { field: "id", operator: "in", value: [1, 3], expected: [1, 3] },
+    { field: "id", operator: "notIn", value: [2], expected: [1, 3] },
+    { field: "name", operator: "like", value: "Al%", expected: [1] },
+    { field: "name", operator: "ilike", value: "al%", expected: [1] },
+    { field: "name", operator: "notLike", value: "Be%", expected: [1, 3] },
+    { field: "name", operator: "notIlike", value: "be%", expected: [1, 3] },
+    { field: "note", operator: "isNull", value: true, expected: [1, 3] },
+    { field: "note", operator: "isNotNull", value: true, expected: [2] },
+    { field: "nums", operator: "arrayOverlaps", value: [3], expected: [1, 2] },
+    { field: "nums", operator: "arrayContains", value: [1, 2], expected: [1] },
+    { field: "nums", operator: "arrayContained", value: [1, 2, 3, 4], expected: [1, 2] },
+  ] as const
 
-      const where = accessibleBy(ability, "read").simpleTable
-      const rows = await db.query.simpleTable.findMany({ where })
-      return rows.map((row) => row.id).sort((a, b) => a - b)
-    }
-
-    await expect(queryFor({ id: { eq: 1 } })).resolves.toEqual([1])
-    await expect(queryFor({ id: { ne: 2 } })).resolves.toEqual([1, 3])
-    await expect(queryFor({ id: { gt: 1 } })).resolves.toEqual([2, 3])
-    await expect(queryFor({ id: { gte: 2 } })).resolves.toEqual([2, 3])
-    await expect(queryFor({ id: { lt: 3 } })).resolves.toEqual([1, 2])
-    await expect(queryFor({ id: { lte: 2 } })).resolves.toEqual([1, 2])
-    await expect(queryFor({ id: { in: [1, 3] } })).resolves.toEqual([1, 3])
-    await expect(queryFor({ id: { notIn: [2] } })).resolves.toEqual([1, 3])
-
-    await expect(queryFor({ name: { like: "Al%" } })).resolves.toEqual([1])
-    await expect(queryFor({ name: { ilike: "al%" } })).resolves.toEqual([1])
-    await expect(queryFor({ name: { notLike: "Be%" } })).resolves.toEqual([1, 3])
-    await expect(queryFor({ name: { notIlike: "be%" } })).resolves.toEqual([1, 3])
-
-    await expect(queryFor({ note: { isNull: true } })).resolves.toEqual([1, 3])
-    await expect(queryFor({ note: { isNotNull: true } })).resolves.toEqual([2])
-
-    await expect(queryFor({ nums: { arrayOverlaps: [3] } })).resolves.toEqual([1, 2])
-    await expect(queryFor({ nums: { arrayContains: [1, 2] } })).resolves.toEqual([1])
-    await expect(queryFor({ nums: { arrayContained: [1, 2, 3, 4] } })).resolves.toEqual([1, 2])
+  cases.forEach(({ field, operator, value, expected }) => {
+    it(`should filter with ${field} ${operator}`, async () => {
+      const result = await queryFor({
+        [field]: { [operator]: value },
+      } as SubjectMap["simpleTable"])
+      expect(result).toEqual(expected)
+    })
   })
 })
