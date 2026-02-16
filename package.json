@@ -78,7 +78,7 @@
     "tsdown": "0.20.3",
     "tsx": "4.21.0",
     "typescript": "^5.9.3",
-    "typescript-eslint": "8.55.0",
+    "typescript-eslint": "8.56.0",
     "vitest": "4.0.18"
   },
   "peerDependencies": {
