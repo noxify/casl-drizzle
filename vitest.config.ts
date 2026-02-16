@@ -1,5 +1,7 @@
 import { defineConfig } from "vitest/config"
 
+const isCI = !!process.env.CI
+
 export default defineConfig({
   test: {
     watch: false,
@@ -7,7 +9,7 @@ export default defineConfig({
     environment: "node",
     passWithNoTests: true,
     testTimeout: 10000,
-    pool: "threads",
+    pool: isCI ? "forks" : "threads",
     coverage: {
       provider: "v8",
       reporter: ["text", "json", "html"],
