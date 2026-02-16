@@ -1,5 +1,11 @@
 # @noxify/casl-drizzle
 
+## 0.0.1-beta.3
+
+### Patch Changes
+
+- 55553e9: use latest changesets action
+
 ## 0.0.1-beta.2
 
 ### Patch Changes
