@@ -85,3 +85,23 @@ jobs:
           echo ""
           echo "=== package.json test script ==="
           jq '.scripts.test' package.json
+
+      - name: Build packages
+        run: |
+          pnpm build
+
+      - name: Run tests (with profiling)
+        run: |
+          echo "=== Test Execution Start ==="
+          date -u
+          echo ""
+
+          # Run with verbose reporter
+          pnpm test --reporter=verbose 2>&1 | tee test-output.log
+
+          echo ""
+          echo "=== Test Execution End ==="
+          date -u
+          echo ""
+          echo "=== Test Duration Summary (from log) ==="
+          grep -E "PASS|FAIL|✓|✖|ms" test-output.log | tail -30
