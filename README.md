@@ -13,7 +13,11 @@ CASL integration for Drizzle ORM - Add type-safe authorization to your database 
 ## Install
 
 ```sh
-npm install @noxify/casl-drizzle @casl/ability
+npm install @noxify/casl-drizzle @casl/ability drizzle-orm@beta
+```
+
+```sh
+pnpm add @noxify/casl-drizzle @casl/ability drizzle-orm@beta
 ```
 
 ## Setup
@@ -151,3 +155,9 @@ can("read", "users", {
 ```
 
 For critical authorization rules involving complex relation filters, always use explicit `RAW` SQL to ensure predictable behavior.
+
+## Acknowledgements
+
+This project was heavily inspired by [ucastle](https://github.com/araujogui/ucastle) by Guilherme Araujo and evolved through substantial refactoring and extension for Drizzle relation support.
+
+If you are looking for the original foundation and ideas, please also check the ucastle repository.
