@@ -24,13 +24,6 @@ const isPlainObject = (value: unknown): value is Record<string, unknown> =>
 
 const eq: FieldInstruction = {
   type: "field",
-  validate(instruction, value) {
-    if (Array.isArray(value) || isPlainObject(value)) {
-      throw new ParsingQueryError(
-        `"${instruction.name}" does not supports comparison of arrays and objects`
-      )
-    }
-  },
 }
 
 const ne: FieldInstruction = {
@@ -45,16 +38,11 @@ const ne: FieldInstruction = {
 const not: FieldInstruction<unknown, ObjectQueryFieldParsingContext> = {
   type: "field",
   parse: ((instruction, value, { hasOperators, field, parse }) => {
-    if (
-      (isPlainObject(value) && !hasOperators(value)) ||
-      Array.isArray(value)
-    ) {
-      throw new ParsingQueryError(
-        `"${instruction.name}" does not supports comparison of arrays and objects`
-      )
+    if (Array.isArray(value) || !isPlainObject(value)) {
+      return new FieldCondition("notEquals", field, value)
     }
 
-    if (!isPlainObject(value)) {
+    if (!hasOperators(value)) {
       return new FieldCondition("notEquals", field, value)
     }
 

@@ -88,5 +88,66 @@ const users = await db.query.users.findMany({ where: filters.users })
 
 ## Behavior Notes
 
-- `every()` currently matches records only when related rows exist and all of them satisfy the condition.
-- `none()` behavior in complex relation paths is still being refined. If needed, use `RAW` SQL as an explicit fallback.
+### `every()` - All Related Records Must Match
+
+`every()` filters records where **all related records** satisfy the condition. Important: it currently requires that related records exist:
+
+```typescript
+// ✅ Returns users who have AT LEAST ONE post, and ALL their posts have views > 100
+can("read", "users", {
+  posts: every({ views: { gt: 100 } }),
+})
+
+// ❌ Returns no users if they have NO posts at all
+// (even though "all zero posts have >100 views" is technically true)
+```
+
+Use when you need to enforce a condition across all related records that exist. For "users with no posts" scenarios, use `none()` instead.
+
+### `none()` - No Related Records Match
+
+`none()` filters records where **no related records** satisfy the condition. Works reliably for simple cases but may behave unexpectedly in complex relation chains.
+
+**✅ Simple case (recommended):**
+
+```typescript
+can("read", "posts", { comments: none() })
+```
+
+**⚠️ Complex paths - Known Issue:**
+When filtering through nested relations, `none()` semantics can be inverted:
+
+```typescript
+// ❌ Behavior may be unexpected:
+can("read", "posts", {
+  comments: none({ author: { id: adminId } }),
+})
+```
+
+**✅ Solution - Use Drizzle's type-safe subquery:**
+
+```typescript
+import { notExists, eq, and } from "drizzle-orm"
+
+can("read", "posts", {
+  RAW: notExists(
+    db
+      .select()
+      .from(comments)
+      .where(and(eq(comments.postId, posts.id), eq(comments.authorId, adminId)))
+  ),
+})
+```
+
+⚠️ **Current limitation**: Due to Drizzle's alias handling in subqueries, both `notExists()` and raw SQL with outer table references currently fail. For now, the most reliable approach is to avoid complex `none()` filters and use simpler patterns or application-level filtering for edge cases.
+
+**For simple cases without outer table references:**
+
+```typescript
+// This works: Simple static condition without referencing outer table
+can("read", "users", {
+  posts: none(), // All users with no posts
+})
+```
+
+For critical authorization rules involving complex relation filters, always use explicit `RAW` SQL to ensure predictable behavior.

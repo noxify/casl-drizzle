@@ -12,6 +12,7 @@ interface TestRecord {
   nullable: string | null
   list: number[]
   tags: string[]
+  profile: { role: string; flags: { active: boolean } }
   maybe?: string
   relation?: { id: number; label: string } | null
   items: { id: number; label: string }[]
@@ -36,6 +37,7 @@ describe("Drizzle operators", () => {
     nullable: null,
     list: [1, 2, 3],
     tags: ["red", "blue"],
+    profile: { role: "admin", flags: { active: true } },
     items: [
       { id: 1, label: "one" },
       { id: 2, label: "two" },
@@ -50,6 +52,36 @@ describe("Drizzle operators", () => {
     expect(matches({ id: { gte: 1 } }, record)).toBeTruthy()
     expect(matches({ id: { lt: 2 } }, record)).toBeTruthy()
     expect(matches({ id: { lte: 1 } }, record)).toBeTruthy()
+
+    expect(matches({ list: { eq: [1, 2, 3] } }, record)).toBeTruthy()
+    expect(matches({ list: { ne: [1, 2] } }, record)).toBeTruthy()
+    expect(matches({ list: { not: [1, 2] } }, record)).toBeTruthy()
+    expect(matches({ list: { eq: [1, 3, 2] } }, record)).toBeFalsy()
+
+    expect(
+      matches(
+        { profile: { eq: { role: "admin", flags: { active: true } } } },
+        record
+      )
+    ).toBeTruthy()
+    expect(
+      matches(
+        { profile: { ne: { role: "editor", flags: { active: true } } } },
+        record
+      )
+    ).toBeTruthy()
+    expect(
+      matches(
+        { profile: { not: { role: "editor", flags: { active: true } } } },
+        record
+      )
+    ).toBeTruthy()
+    expect(
+      matches(
+        { profile: { eq: { role: "admin", flags: { active: false } } } },
+        record
+      )
+    ).toBeFalsy()
   })
 
   it("membership operators", () => {

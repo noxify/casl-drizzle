@@ -1,14 +1,13 @@
 import type { CompoundCondition, Condition, FieldCondition } from "@ucast/core"
+import type { eq as jsEq, ne as jsNe } from "@ucast/js"
 import {
   and,
   compare,
   createJsInterpreter,
-  eq,
   gt,
   gte,
   lt,
   lte,
-  ne,
   or,
   within,
 } from "@ucast/js"
@@ -241,6 +240,77 @@ function toComparable(value: unknown) {
   return value && typeof value === "object" ? value.valueOf() : value
 }
 
+const isPlainObject = (value: unknown): value is Record<string, unknown> =>
+  value !== null &&
+  typeof value === "object" &&
+  (Object.getPrototypeOf(value) === Object.prototype ||
+    Object.getPrototypeOf(value) === null)
+
+const deepEqual = (left: unknown, right: unknown): boolean => {
+  if (Object.is(left, right)) {
+    return true
+  }
+
+  if (left instanceof Date && right instanceof Date) {
+    return left.getTime() === right.getTime()
+  }
+
+  if (Array.isArray(left) && Array.isArray(right)) {
+    return (
+      left.length === right.length &&
+      left.every((value, index) => deepEqual(value, right[index]))
+    )
+  }
+
+  if (isPlainObject(left) && isPlainObject(right)) {
+    const leftKeys = Object.keys(left)
+    const rightKeys = Object.keys(right)
+
+    return (
+      leftKeys.length === rightKeys.length &&
+      leftKeys.every(
+        (key) => Object.hasOwn(right, key) && deepEqual(left[key], right[key])
+      )
+    )
+  }
+
+  return false
+}
+
+const isComparableValue = (value: unknown): boolean => {
+  const type = typeof value
+  return (
+    value === null ||
+    type === "string" ||
+    type === "number" ||
+    type === "boolean" ||
+    type === "bigint" ||
+    value instanceof Date
+  )
+}
+
+const eq: typeof jsEq = (
+  condition,
+  object,
+  { get, compare: compareFn }
+): boolean => {
+  const left = get(object, condition.field)
+  const right = condition.value
+
+  if (deepEqual(left, right)) {
+    return true
+  }
+
+  if (isComparableValue(left) && isComparableValue(right)) {
+    return compareFn(left, right) === 0
+  }
+
+  return false
+}
+
+const ne: typeof jsNe = (condition, object, context): boolean =>
+  !eq(condition, object, context)
+
 /**
  * RAW SQL conditions can't be evaluated in JavaScript.
  * In DB context, they're passed through by accessibleBy().
@@ -253,9 +323,7 @@ const compareValues: typeof compare = (a, b) =>
 
 export const interpretDrizzleQuery = createJsInterpreter(
   {
-    /*
-     * TODO: support arrays and objects comparison
-     */
+    // eq/ne support deep equality for arrays and plain objects.
     eq,
     equals: eq,
     notEquals: ne,

@@ -1,5 +1,5 @@
 import type { SQL, BuildQueryResult } from "drizzle-orm"
-import { sql } from "drizzle-orm"
+import { sql, notExists, eq, and } from "drizzle-orm"
 import { beforeAll, describe, expect, it } from "vitest"
 
 import type { QueryInput } from "../src"
@@ -243,7 +243,9 @@ describe("Relations (DB)", () => {
           (can) => {
             can("read", "posts", {
               // Builder callback provides Drizzle operators and column proxies
-              author: some(({ eq, columns }) => eq(columns.name, authorName)),
+              author: some(({ eq: eqFn, columns }) =>
+                eqFn(columns.name, authorName)
+              ),
             })
           }
         )
@@ -286,8 +288,8 @@ describe("Relations (DB)", () => {
             can("read", "posts", {
               // Complex conditions: author.id > 1 AND author.name != 'Bob'
               author: some(
-                ({ gt, ne, and, columns }) =>
-                  and(gt(columns.id, 1), ne(columns.name, "Bob")) as SQL
+                ({ gt: gtFn, ne: neFn, and: andFn, columns }) =>
+                  andFn(gtFn(columns.id, 1), neFn(columns.name, "Bob")) as SQL
               ),
             })
           }
@@ -409,7 +411,9 @@ describe("Relations (DB)", () => {
         const ability = createDrizzleAbility<SubjectMap, AllowedAction>(
           (can) => {
             can("read", "posts", {
-              comments: none(({ eq, columns }) => eq(columns.authorId, 2)),
+              comments: none(({ eq: eqFn, columns }) =>
+                eqFn(columns.authorId, 2)
+              ),
             })
           }
         )
@@ -476,6 +480,80 @@ describe("Relations (DB)", () => {
         // Charlie: post is "Charlie post" => excluded
         expect(ids).toStrictEqual([1, 2])
       })
+
+      it.fails("should filter posts with notExists() workaround when none() has inverted semantics", async () => {
+        // Workaround for none() inverted logic in complex paths:
+        // Use notExists() with Drizzle's type-safe builder
+        // NOTE: This currently fails due to Drizzle's subquery alias limitations:
+        // The subquery cannot reference the outer table correctly (posts vs d0 alias)
+        const ability = createDrizzleAbility<SubjectMap, AllowedAction>(
+          (can) => {
+            can("read", "posts", {
+              RAW: notExists(
+                db
+                  .select()
+                  .from(schema.comments)
+                  .where(
+                    and(
+                      eq(schema.comments.postId, schema.posts.id),
+                      eq(schema.comments.authorId, 2)
+                    )
+                  )
+              ),
+            })
+          }
+        )
+
+        const filters = accessibleBy(ability, "read")
+        const results = await db.query.posts.findMany({
+          where: filters.posts,
+        })
+
+        const ids = results
+          .map((r: { id: number }) => r.id)
+          .toSorted((a, b) => a - b)
+
+        // Expected: Posts with no comments from author 2
+        // Post 1: has comment from author 2 => excluded
+        // Post 2: no comments => included
+        // Post 3: has comment from author 2 => excluded
+        // Post 4: no comments => included
+        // Post 5: no comments => included
+        expect(ids).toStrictEqual([2, 4, 5])
+      })
+
+      it.fails("should filter posts with raw SQL NOT EXISTS when none() has inverted semantics", async () => {
+        // NOTE: This fails due to Drizzle's alias limitation:
+        // When the outer table is aliased (posts as d0), raw SQL cannot reference "posts"
+        // The query generator creates: WHERE ... posts.id = ... but the table is actually "d0"
+        const ability = createDrizzleAbility<SubjectMap, AllowedAction>(
+          (can) => {
+            can("read", "posts", {
+              RAW: sql`NOT EXISTS (
+                SELECT 1 FROM comments c
+                WHERE c.post_id = posts.id AND c.author_id = ${2}
+              )`,
+            })
+          }
+        )
+
+        const filters = accessibleBy(ability, "read")
+        const results = await db.query.posts.findMany({
+          where: filters.posts,
+        })
+
+        const ids = results
+          .map((r: { id: number }) => r.id)
+          .toSorted((a, b) => a - b)
+
+        // Expected: Posts with no comments from author 2
+        // Post 1: has comment from author 2 => excluded
+        // Post 2: no comments => included
+        // Post 3: has comment from author 2 => excluded
+        // Post 4: no comments => included
+        // Post 5: no comments => included
+        expect(ids).toStrictEqual([2, 4, 5])
+      })
     })
   })
 
@@ -506,8 +584,8 @@ describe("Relations (DB)", () => {
         const ability = createDrizzleAbility<SubjectMap, AllowedAction>(
           (can) => {
             can("read", "groups", {
-              participants: some(({ eq, columns }) =>
-                eq(columns.name, "Alice")
+              participants: some(({ eq: eqFn, columns }) =>
+                eqFn(columns.name, "Alice")
               ),
             })
           }
