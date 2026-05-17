@@ -1,46 +1,53 @@
 import type { CompoundCondition, Condition, FieldCondition } from "@ucast/core"
-import { and, compare, createJsInterpreter, eq, gt, gte, lt, lte, ne, or, within } from "@ucast/js"
+import {
+  and,
+  compare,
+  createJsInterpreter,
+  eq,
+  gt,
+  gte,
+  lt,
+  lte,
+  ne,
+  or,
+  within,
+} from "@ucast/js"
 
 type StringInterpreter = (
+  // oxlint-disable-next-line typescript/no-invalid-void-type
   this: void,
   condition: FieldCondition<string>,
   object: Record<string, string>,
   context: {
     get: (obj: unknown, field: string) => unknown
     interpret?: (condition: Condition, obj: unknown) => boolean
-  },
+  }
 ) => boolean
-const startsWith: StringInterpreter = (condition, object, { get }): boolean => {
-  return (get(object, condition.field) as string).startsWith(condition.value)
-}
-const istartsWith: StringInterpreter = (condition, object, { get }): boolean => {
-  return (get(object, condition.field) as string)
+const startsWith: StringInterpreter = (condition, object, { get }): boolean =>
+  (get(object, condition.field) as string).startsWith(condition.value)
+const istartsWith: StringInterpreter = (condition, object, { get }): boolean =>
+  (get(object, condition.field) as string)
     .toLowerCase()
     .startsWith(condition.value.toLowerCase())
-}
 
-const endsWith: StringInterpreter = (condition, object, { get }): boolean => {
-  return (get(object, condition.field) as string).endsWith(condition.value)
-}
-const iendsWith: StringInterpreter = (condition, object, { get }): boolean => {
-  return (get(object, condition.field) as string)
+const endsWith: StringInterpreter = (condition, object, { get }): boolean =>
+  (get(object, condition.field) as string).endsWith(condition.value)
+const iendsWith: StringInterpreter = (condition, object, { get }): boolean =>
+  (get(object, condition.field) as string)
     .toLowerCase()
     .endsWith(condition.value.toLowerCase())
-}
 
-const contains: StringInterpreter = (condition, object, { get }): boolean => {
-  return (get(object, condition.field) as string).includes(condition.value)
-}
-const icontains: StringInterpreter = (condition, object, { get }): boolean => {
-  return (get(object, condition.field) as string)
+const contains: StringInterpreter = (condition, object, { get }): boolean =>
+  (get(object, condition.field) as string).includes(condition.value)
+const icontains: StringInterpreter = (condition, object, { get }): boolean =>
+  (get(object, condition.field) as string)
     .toLowerCase()
     .includes(condition.value.toLowerCase())
-}
 
 const likeToRegExp = (pattern: string): RegExp => {
-  const escaped = pattern.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
-  const regex = `^${escaped.replace(/%/g, ".*").replace(/_/g, ".")}$`
-  return new RegExp(regex)
+  const escaped = pattern.replaceAll(/[.*+?^${}()|[\]\\]/gu, "\\$&")
+  const regex = `^${escaped.replaceAll("%", ".*").replaceAll("_", ".")}$`
+  return new RegExp(regex, "u")
 }
 
 const like: StringInterpreter = (condition, object, { get }): boolean => {
@@ -65,55 +72,85 @@ type ArrayInterpreter<
   TConditionValue,
   TValue extends Record<string, unknown[]> = Record<string, unknown[]>,
 > = (
+  // oxlint-disable-next-line typescript/no-invalid-void-type
   this: void,
   condition: FieldCondition<TConditionValue>,
   object: TValue,
   context: {
     get: (obj: unknown, field: string) => unknown
     interpret?: (condition: Condition, obj: unknown) => boolean
-  },
+  }
 ) => boolean
-const isEmpty: ArrayInterpreter<boolean> = (condition, object, { get }): boolean => {
+const isEmpty: ArrayInterpreter<boolean> = (
+  condition,
+  object,
+  { get }
+): boolean => {
   const value = get(object, condition.field) as unknown[]
   const empty = Array.isArray(value) && value.length === 0
   return empty === condition.value
 }
-const has: ArrayInterpreter<unknown> = (condition, object, { get }): boolean => {
+const has: ArrayInterpreter<unknown> = (
+  condition,
+  object,
+  { get }
+): boolean => {
   const value = get(object, condition.field) as unknown[]
   return Array.isArray(value) && value.includes(condition.value)
 }
-const hasSome: ArrayInterpreter<unknown[]> = (condition, object, { get }): boolean => {
+const hasSome: ArrayInterpreter<unknown[]> = (
+  condition,
+  object,
+  { get }
+): boolean => {
   const value = get(object, condition.field) as unknown[]
   return Array.isArray(value) && condition.value.some((v) => value.includes(v))
 }
-const hasEvery: ArrayInterpreter<unknown[]> = (condition, object, { get }): boolean => {
+const hasEvery: ArrayInterpreter<unknown[]> = (
+  condition,
+  object,
+  { get }
+): boolean => {
   const value = get(object, condition.field) as unknown[]
   return Array.isArray(value) && condition.value.every((v) => value.includes(v))
 }
 
-const arrayOverlaps: ArrayInterpreter<unknown[]> = (condition, object, { get }): boolean => {
+const arrayOverlaps: ArrayInterpreter<unknown[]> = (
+  condition,
+  object,
+  { get }
+): boolean => {
   const value = get(object, condition.field) as unknown[]
   return Array.isArray(value) && condition.value.some((v) => value.includes(v))
 }
 
-const arrayContains: ArrayInterpreter<unknown[]> = (condition, object, { get }): boolean => {
+const arrayContains: ArrayInterpreter<unknown[]> = (
+  condition,
+  object,
+  { get }
+): boolean => {
   const value = get(object, condition.field) as unknown[]
   return Array.isArray(value) && condition.value.every((v) => value.includes(v))
 }
 
-const arrayContained: ArrayInterpreter<unknown[]> = (condition, object, { get }): boolean => {
+const arrayContained: ArrayInterpreter<unknown[]> = (
+  condition,
+  object,
+  { get }
+): boolean => {
   const value = get(object, condition.field) as unknown[]
   return Array.isArray(value) && value.every((v) => condition.value.includes(v))
 }
 
 const every: (
+  // oxlint-disable-next-line typescript/no-invalid-void-type
   this: void,
   condition: FieldCondition<Condition>,
   object: Record<string, unknown>,
   context: {
     get: (obj: unknown, field: string) => unknown
     interpret: (condition: Condition, obj: unknown) => boolean
-  },
+  }
 ) => boolean = (condition, object, { get, interpret }): boolean => {
   const items = get(object, condition.field) as Record<string, unknown>[]
   return (
@@ -124,26 +161,31 @@ const every: (
 }
 
 const some: (
+  // oxlint-disable-next-line typescript/no-invalid-void-type
   this: void,
   condition: FieldCondition<Condition>,
   object: Record<string, unknown>,
   context: {
     get: (obj: unknown, field: string) => unknown
     interpret: (condition: Condition, obj: unknown) => boolean
-  },
+  }
 ) => boolean = (condition, object, { get, interpret }): boolean => {
   const items = get(object, condition.field) as Record<string, unknown>[]
-  return Array.isArray(items) && items.some((item) => interpret(condition.value, item))
+  return (
+    Array.isArray(items) &&
+    items.some((item) => interpret(condition.value, item))
+  )
 }
 
 const is: (
+  // oxlint-disable-next-line typescript/no-invalid-void-type
   this: void,
   condition: FieldCondition<Condition>,
   object: Record<string, unknown>,
   context: {
     get: (obj: unknown, field: string) => unknown
     interpret: (condition: Condition, obj: unknown) => boolean
-  },
+  }
 ) => boolean = (condition, object, { get, interpret }): boolean => {
   const item = get(object, condition.field)
   return (
@@ -154,39 +196,42 @@ const is: (
 }
 
 const not: (
+  // oxlint-disable-next-line typescript/no-invalid-void-type
   this: void,
   condition: CompoundCondition,
   object: Record<string, unknown>,
-  context: { interpret: (condition: Condition, obj: unknown) => boolean },
-) => boolean = (condition, object, { interpret }): boolean => {
-  return condition.value.every((subCondition) => !interpret(subCondition, object))
-}
+  context: { interpret: (condition: Condition, obj: unknown) => boolean }
+) => boolean = (condition, object, { interpret }): boolean =>
+  condition.value.every((subCondition) => !interpret(subCondition, object))
 
 const isSet: (
+  // oxlint-disable-next-line typescript/no-invalid-void-type
   this: void,
   condition: FieldCondition<boolean>,
   object: Record<string, unknown>,
-  context: { get: (obj: unknown, field: string) => unknown },
+  context: { get: (obj: unknown, field: string) => unknown }
 ) => boolean = (condition, object, { get }): boolean => {
   const item = get(object, condition.field)
   return (item !== undefined) === condition.value
 }
 
 const isNull: (
+  // oxlint-disable-next-line typescript/no-invalid-void-type
   this: void,
   condition: FieldCondition<boolean>,
   object: Record<string, unknown>,
-  context: { get: (obj: unknown, field: string) => unknown },
+  context: { get: (obj: unknown, field: string) => unknown }
 ) => boolean = (condition, object, { get }): boolean => {
   const item = get(object, condition.field)
   return (item === null) === condition.value
 }
 
 const isNotNull: (
+  // oxlint-disable-next-line typescript/no-invalid-void-type
   this: void,
   condition: FieldCondition<boolean>,
   object: Record<string, unknown>,
-  context: { get: (obj: unknown, field: string) => unknown },
+  context: { get: (obj: unknown, field: string) => unknown }
 ) => boolean = (condition, object, { get }): boolean => {
   const item = get(object, condition.field)
   return (item !== null) === condition.value
@@ -203,11 +248,14 @@ function toComparable(value: unknown) {
  */
 const raw: typeof and = () => true
 
-const compareValues: typeof compare = (a, b) => compare(toComparable(a), toComparable(b))
+const compareValues: typeof compare = (a, b) =>
+  compare(toComparable(a), toComparable(b))
 
 export const interpretDrizzleQuery = createJsInterpreter(
   {
-    // TODO: support arrays and objects comparison
+    /*
+     * TODO: support arrays and objects comparison
+     */
     eq,
     equals: eq,
     notEquals: ne,
@@ -245,7 +293,8 @@ export const interpretDrizzleQuery = createJsInterpreter(
     RAW: raw,
   },
   {
-    get: (object: Record<string, unknown>, field: string): unknown => object[field],
+    get: (object: Record<string, unknown>, field: string): unknown =>
+      object[field],
     compare: compareValues,
-  },
+  }
 )

@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-call */
 import type {
   Comparable,
   CompoundInstruction,
@@ -17,20 +16,18 @@ import {
 
 import { ParsingQueryError } from "./query-error"
 
-const isPlainObject = (value: unknown): value is Record<string, unknown> => {
-  return (
-    value !== null &&
-    typeof value === "object" &&
-    (Object.getPrototypeOf(value) === Object.prototype || Object.getPrototypeOf(value) === null)
-  )
-}
+const isPlainObject = (value: unknown): value is Record<string, unknown> =>
+  value !== null &&
+  typeof value === "object" &&
+  (Object.getPrototypeOf(value) === Object.prototype ||
+    Object.getPrototypeOf(value) === null)
 
 const eq: FieldInstruction = {
   type: "field",
   validate(instruction, value) {
     if (Array.isArray(value) || isPlainObject(value)) {
       throw new ParsingQueryError(
-        `"${instruction.name}" does not supports comparison of arrays and objects`,
+        `"${instruction.name}" does not supports comparison of arrays and objects`
       )
     }
   },
@@ -38,6 +35,7 @@ const eq: FieldInstruction = {
 
 const ne: FieldInstruction = {
   type: "field",
+  // oxlint-disable-next-line no-void
   validate: void eq.validate,
   parse(_, value, { field }) {
     return new FieldCondition("notEquals", field, value)
@@ -46,11 +44,13 @@ const ne: FieldInstruction = {
 
 const not: FieldInstruction<unknown, ObjectQueryFieldParsingContext> = {
   type: "field",
-  // eslint-disable-next-line
   parse: ((instruction, value, { hasOperators, field, parse }) => {
-    if ((isPlainObject(value) && !hasOperators(value)) || Array.isArray(value)) {
+    if (
+      (isPlainObject(value) && !hasOperators(value)) ||
+      Array.isArray(value)
+    ) {
       throw new ParsingQueryError(
-        `"${instruction.name}" does not supports comparison of arrays and objects`,
+        `"${instruction.name}" does not supports comparison of arrays and objects`
       )
     }
 
@@ -66,7 +66,11 @@ const within: FieldInstruction<unknown[]> = {
   type: "field",
   validate(instruction, value) {
     if (!Array.isArray(value)) {
-      throw ParsingQueryError.invalidArgument(instruction.name, value, "an array")
+      throw ParsingQueryError.invalidArgument(
+        instruction.name,
+        value,
+        "an array"
+      )
     }
   },
 }
@@ -76,10 +80,16 @@ const lt: FieldInstruction<Comparable> = {
   validate(instruction, value) {
     const type = typeof value
     const isComparable =
-      type === "string" || (type === "number" && Number.isFinite(value)) || value instanceof Date
+      type === "string" ||
+      (type === "number" && Number.isFinite(value)) ||
+      value instanceof Date
 
     if (!isComparable) {
-      throw ParsingQueryError.invalidArgument(instruction.name, value, "comparable value")
+      throw ParsingQueryError.invalidArgument(
+        instruction.name,
+        value,
+        "comparable value"
+      )
     }
   },
 }
@@ -92,7 +102,7 @@ const mode: FieldInstruction<string> = {
       throw ParsingQueryError.invalidArgument(
         instruction.name,
         value,
-        `one of ${Array.from(POSSIBLE_MODES).join(", ")}`,
+        `one of ${[...POSSIBLE_MODES].join(", ")}`
       )
     }
   },
@@ -113,7 +123,8 @@ const compareString: FieldInstruction<string, StringFieldContext> = {
     }
   },
   parse(instruction, value, { query, field }) {
-    const name = query.mode === "insensitive" ? `i${instruction.name}` : instruction.name
+    const name =
+      query.mode === "insensitive" ? `i${instruction.name}` : instruction.name
     return new FieldCondition(name, field, value)
   },
 }
@@ -138,7 +149,11 @@ const compound: CompoundInstruction = {
   type: "compound",
   validate(instruction, value) {
     if (!value || typeof value !== "object") {
-      throw ParsingQueryError.invalidArgument(instruction.name, value, "an array or object")
+      throw ParsingQueryError.invalidArgument(
+        instruction.name,
+        value,
+        "an array or object"
+      )
     }
   },
   parse(instruction, arrayOrObject, { parse }) {
@@ -152,7 +167,11 @@ const booleanField: FieldInstruction<boolean> = {
   type: "field",
   validate(instruction, value) {
     if (typeof value !== "boolean") {
-      throw ParsingQueryError.invalidArgument(instruction.name, value, "a boolean")
+      throw ParsingQueryError.invalidArgument(
+        instruction.name,
+        value,
+        "a boolean"
+      )
     }
   },
 }
@@ -165,7 +184,11 @@ const hasSome: FieldInstruction<unknown[]> = {
   type: "field",
   validate(instruction, value) {
     if (!Array.isArray(value)) {
-      throw ParsingQueryError.invalidArgument(instruction.name, value, "an array")
+      throw ParsingQueryError.invalidArgument(
+        instruction.name,
+        value,
+        "an array"
+      )
     }
   },
 }
@@ -174,19 +197,26 @@ const arrayField: FieldInstruction<unknown[]> = {
   type: "field",
   validate(instruction, value) {
     if (!Array.isArray(value)) {
-      throw ParsingQueryError.invalidArgument(instruction.name, value, "an array")
+      throw ParsingQueryError.invalidArgument(
+        instruction.name,
+        value,
+        "an array"
+      )
     }
   },
 }
 
-const relation: FieldInstruction<Record<string, unknown>, ObjectQueryFieldParsingContext> = {
+const relation: FieldInstruction<
+  Record<string, unknown>,
+  ObjectQueryFieldParsingContext
+> = {
   type: "field",
   parse(instruction, value, { field, parse }) {
     if (!isPlainObject(value)) {
       throw ParsingQueryError.invalidArgument(
         instruction.name,
         value,
-        "a query for nested relation",
+        "a query for nested relation"
       )
     }
 
@@ -194,14 +224,19 @@ const relation: FieldInstruction<Record<string, unknown>, ObjectQueryFieldParsin
   },
 }
 
-const inverted = (name: string, baseInstruction: FieldInstruction): FieldInstruction => {
+const inverted = (
+  name: string,
+  baseInstruction: FieldInstruction
+): FieldInstruction => {
   const parse = baseInstruction.parse?.bind(baseInstruction)
 
   if (!parse) {
     return {
       ...baseInstruction,
       parse(_, value, ctx) {
-        return new CompoundCondition("NOT", [new FieldCondition(name, ctx.field, value)])
+        return new CompoundCondition("NOT", [
+          new FieldCondition(name, ctx.field, value),
+        ])
       },
     }
   }
@@ -212,7 +247,7 @@ const inverted = (name: string, baseInstruction: FieldInstruction): FieldInstruc
       const condition = parse(instruction, value, ctx)
       if (condition.operator !== instruction.name) {
         throw new Error(
-          `Cannot invert "${name}" operator parser because it returns a complex Condition`,
+          `Cannot invert "${name}" operator parser because it returns a complex Condition`
         )
       }
       ;(condition as Mutable<Condition>).operator = name
@@ -254,15 +289,17 @@ const instructions = {
   ilike: compareLike,
   notLike: {
     type: "field",
-    parse: ((_, value, { field, parse }) => {
-      return new CompoundCondition("NOT", [parse({ like: value }, { field })])
-    }) as FieldInstruction<unknown, ObjectQueryFieldParsingContext>["parse"],
+    parse: ((_, value, { field, parse }) =>
+      new CompoundCondition("NOT", [
+        parse({ like: value }, { field }),
+      ])) as FieldInstruction<unknown, ObjectQueryFieldParsingContext>["parse"],
   },
   notIlike: {
     type: "field",
-    parse: ((_, value, { field, parse }) => {
-      return new CompoundCondition("NOT", [parse({ ilike: value }, { field })])
-    }) as FieldInstruction<unknown, ObjectQueryFieldParsingContext>["parse"],
+    parse: ((_, value, { field, parse }) =>
+      new CompoundCondition("NOT", [
+        parse({ ilike: value }, { field }),
+      ])) as FieldInstruction<unknown, ObjectQueryFieldParsingContext>["parse"],
   },
   isNull: booleanField,
   isNotNull: booleanField,
@@ -289,10 +326,11 @@ export interface ParseOptions {
   field: string
 }
 
-export class DrizzleQueryParser extends ObjectQueryParser<Record<string, unknown>> {
+export class DrizzleQueryParser extends ObjectQueryParser<
+  Record<string, unknown>
+> {
   constructor() {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    super(instructions as any, {
+    super(instructions, {
       defaultOperatorName: "eq",
     })
   }
@@ -320,10 +358,15 @@ export class DrizzleQueryParser extends ObjectQueryParser<Record<string, unknown
   }
 
   parse(query: Record<string, unknown>, options?: ParseOptions): Condition {
-    const normalizedQuery = this.normalizeEqOperator(query) as Record<string, unknown>
+    const normalizedQuery = this.normalizeEqOperator(query) as Record<
+      string,
+      unknown
+    >
     if (options?.field) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      return buildAnd((this.parseFieldOperators as any)(options.field, normalizedQuery))
+      return buildAnd(
+        // oxlint-disable-next-line typescript/no-explicit-any
+        (this.parseFieldOperators as any)(options.field, normalizedQuery)
+      )
     }
 
     return super.parse(normalizedQuery)

@@ -1,9 +1,9 @@
 import { beforeAll, beforeEach, describe, expect, it } from "vitest"
 
 import type { QueryInput } from "../src"
-import type { relations } from "./setup/schema"
 import { accessibleBy, createDrizzleAbility } from "../src"
 import { createDb, resetDb } from "./setup"
+import type { relations } from "./setup/schema"
 import { schema } from "./setup/schema"
 
 describe("Table without relations", () => {
@@ -41,10 +41,12 @@ describe("Table without relations", () => {
       simpleTable: QueryInput<typeof relations, "simpleTable">
     }
 
-    const ability = createDrizzleAbility<SubjectMap, AllowedAction>((can, cannot) => {
-      can("read", "simpleTable", { id: 1 })
-      cannot("read", "simpleTable", { id: 2 })
-    })
+    const ability = createDrizzleAbility<SubjectMap, AllowedAction>(
+      (can, cannot) => {
+        can("read", "simpleTable", { id: 1 })
+        cannot("read", "simpleTable", { id: 2 })
+      }
+    )
 
     const accessCondition = accessibleBy(ability, "read").simpleTable
     const result = await db.query.simpleTable.findMany({
@@ -58,9 +60,9 @@ describe("Table without relations", () => {
       AND: [{ NOT: { id: 2 } }],
     }
 
-    expect(accessCondition).toEqual(expectedAccessCondition)
+    expect(accessCondition).toStrictEqual(expectedAccessCondition)
     expect(result).toHaveLength(1)
-    expect(result).toEqual([
+    expect(result).toStrictEqual([
       {
         id: 1,
         name: "Allowed Row",

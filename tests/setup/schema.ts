@@ -20,7 +20,7 @@ export const posts = p.pgTable(
     content: p.text().notNull(),
     authorId: p.integer("author_id"),
   },
-  (t) => [p.index("posts_author_id_idx").on(t.authorId)],
+  (t) => [p.index("posts_author_id_idx").on(t.authorId)]
 )
 
 export const comments = p.pgTable("comments", {
@@ -51,7 +51,7 @@ export const usersToGroups = p.pgTable(
     p.index("users_to_groups_user_id_idx").on(t.userId),
     p.index("users_to_groups_group_id_idx").on(t.groupId),
     p.index("users_to_groups_composite_idx").on(t.userId, t.groupId),
-  ],
+  ]
 )
 
 export const relations = defineRelations(
@@ -80,7 +80,16 @@ export const relations = defineRelations(
         to: r.posts.id,
       }),
     },
-  }),
+  })
 )
 
-export const schema = { users, posts, comments, groups, usersToGroups, simpleTable }
+export type Relations = typeof relations
+
+export const schema = {
+  users,
+  posts,
+  comments,
+  groups,
+  usersToGroups,
+  simpleTable,
+}

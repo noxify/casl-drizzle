@@ -2,10 +2,17 @@ import type { AnyAbility, PureAbility } from "@casl/ability"
 import { AbilityBuilder } from "@casl/ability"
 
 import type { DrizzleQueryFactory } from "./runtime"
-import type { DefineDrizzleAbility, DrizzleAbility } from "./types"
 import { createAbilityFactory } from "./runtime"
+import type { DefineDrizzleAbility, DrizzleAbility } from "./types"
 
-export { accessibleBy, ParsingQueryError, drizzleQuery, some, every, none } from "./runtime"
+export {
+  accessibleBy,
+  ParsingQueryError,
+  drizzleQuery,
+  some,
+  every,
+  none,
+} from "./runtime"
 export type * from "./runtime"
 
 /**
@@ -35,11 +42,14 @@ export type * from "./runtime"
 export function createDrizzleAbilityFor(): new (
   ...args: ConstructorParameters<typeof PureAbility>
 ) => AnyAbility
-export function createDrizzleAbilityFor<TSubject, TActions extends string = string>(): new (
+export function createDrizzleAbilityFor<
+  TSubject,
+  TActions extends string = string,
+>(): new (
   ...args: ConstructorParameters<typeof PureAbility>
 ) => DrizzleAbility<TSubject, TActions>
 export function createDrizzleAbilityFor() {
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-return, @typescript-eslint/no-explicit-any
+  // oxlint-disable-next-line typescript/no-explicit-any
   return createAbilityFactory<string, DrizzleQueryFactory>() as any
 }
 
@@ -67,31 +77,33 @@ export function createDrizzleAbilityFor() {
  * })
  * ```
  */
-export function createDrizzleAbility<TSubject, TActions extends string = string>(
+export function createDrizzleAbility<
+  TSubject,
+  TActions extends string = string,
+>(
   define: (
     can: <S extends keyof TSubject & string>(
       action: TActions,
       subject: S,
-      conditions?: TSubject[S],
+      conditions?: TSubject[S]
     ) => void,
     cannot: <S extends keyof TSubject & string>(
       action: TActions,
       subject: S,
-      conditions?: TSubject[S],
-    ) => void,
-  ) => void,
+      conditions?: TSubject[S]
+    ) => void
+  ) => void
 ): DrizzleAbility<TSubject, TActions> {
   type AppAbility = DefineDrizzleAbility<TSubject, TActions>
 
   const builder = new AbilityBuilder<AppAbility>(
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-explicit-any
-    createAbilityFactory<string, DrizzleQueryFactory>() as any,
+    createAbilityFactory<string, DrizzleQueryFactory>()
   )
 
   type Can = <S extends keyof TSubject & string>(
     action: TActions,
     subject: S,
-    conditions?: TSubject[S],
+    conditions?: TSubject[S]
   ) => void
 
   // Cast builder methods to the subject-specific signature for precise conditions typing.

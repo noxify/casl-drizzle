@@ -1,12 +1,10 @@
 {
   "recommendations": [
-    "dbaeumer.vscode-eslint",
-    "esbenp.prettier-vscode",
-    "bradlc.vscode-tailwindcss",
     "yoavbls.pretty-ts-errors",
     "vitest.explorer",
     "vercel.turbo-vsc",
     "foxundermoon.shell-format",
-    "bierner.comment-tagged-templates"
+    "bierner.comment-tagged-templates",
+    "oxc.oxc-vscode"
   ]
 }

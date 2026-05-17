@@ -1,5 +1,6 @@
 import { defineConfig } from "vitest/config"
 
+// oxlint-disable-next-line no-restricted-properties
 const isCI = !!process.env.CI
 
 export default defineConfig({
@@ -8,12 +9,18 @@ export default defineConfig({
     globals: true,
     environment: "node",
     passWithNoTests: true,
-    testTimeout: 10000,
+    testTimeout: 10_000,
     pool: isCI ? "forks" : "threads",
     coverage: {
       provider: "v8",
       reporter: ["text", "json", "html"],
-      exclude: ["node_modules/", "dist/", "**/*.config.*", "**/*.test.*", "tests/**"],
+      exclude: [
+        "node_modules/",
+        "dist/",
+        "**/*.config.*",
+        "**/*.test.*",
+        "tests/**",
+      ],
     },
     projects: [
       {

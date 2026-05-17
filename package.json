@@ -3,16 +3,75 @@
   "version": "0.0.1-beta.3",
   "description": "Drizzle-ORM adapter for CASL - generate Drizzle where inputs from CASL abilities",
   "keywords": [
+    "casl",
     "drizzle",
     "drizzle-orm",
-    "casl",
     "ucast"
   ],
+  "license": "MIT",
   "repository": {
     "type": "git",
     "url": "https://github.com/noxify/casl-drizzle"
   },
-  "license": "MIT",
+  "files": [
+    "dist"
+  ],
+  "type": "module",
+  "types": "./dist/index.d.mts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.mts",
+      "import": "./dist/index.mjs",
+      "default": "./src/index.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsdown",
+    "ci:publish": "pnpm build && pnpm publish -r --access public --publish-branch main && pnpm changeset tag",
+    "ci:version": "pnpm changeset version && pnpm install --no-frozen-lockfile && git add .",
+    "cs": "changeset",
+    "lint": "ultracite check",
+    "lint:fix": "ultracite fix && pnpm format:fix",
+    "format": "oxfmt --check",
+    "format:fix": "oxfmt .",
+    "test": "vitest --run",
+    "test:coverage": "vitest --coverage",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit",
+    "deps:update": "pnpm update -i -L -r"
+  },
+  "dependencies": {
+    "@ucast/core": "2.0.0",
+    "@ucast/js": "4.0.1"
+  },
+  "devDependencies": {
+    "@casl/ability": "6.8.1",
+    "@changesets/cli": "2.31.0",
+    "@electric-sql/pglite": "0.4.5",
+    "@types/js-yaml": "4.0.9",
+    "@types/node": "24.12.4",
+    "@vitest/coverage-v8": "4.1.6",
+    "dedent": "1.7.2",
+    "drizzle-kit": "beta",
+    "drizzle-orm": "beta",
+    "json-schema-to-typescript": "15.0.4",
+    "node-pty": "1.1.0",
+    "oxfmt": "0.50.0",
+    "oxlint": "1.65.0",
+    "tsdown": "0.22.0",
+    "tsx": "4.22.1",
+    "typescript": "^6.0.3",
+    "ultracite": "7.7.0",
+    "vitest": "4.1.6"
+  },
+  "peerDependencies": {
+    "@casl/ability": "^6.8.1",
+    "drizzle-orm": ">=1.0.0-beta.22"
+  },
+  "engines": {
+    "node": ">=24"
+  },
+  "packageManager": "pnpm@11.1.2",
   "authors": [
     {
       "name": "Marcus Reinhardt",
@@ -22,70 +81,5 @@
       "name": "Guilherme Araújo",
       "email": "arauujogui@gmail.com"
     }
-  ],
-  "type": "module",
-  "exports": {
-    ".": {
-      "types": "./dist/index.d.mts",
-      "import": "./dist/index.mjs",
-      "default": "./src/index.ts"
-    }
-  },
-  "types": "./dist/index.d.mts",
-  "files": [
-    "dist"
-  ],
-  "packageManager": "pnpm@10.29.2",
-  "scripts": {
-    "build": "tsdown",
-    "ci:publish": "pnpm build && pnpm publish -r --access public --publish-branch main && pnpm changeset tag",
-    "ci:version": "pnpm changeset version && pnpm install --no-frozen-lockfile && git add .",
-    "cs": "changeset",
-    "format": "prettier --check . --ignore-path ./.gitignore --ignore-path ./.prettierignore",
-    "format:fix": "prettier --write . --ignore-path ./.gitignore --ignore-path ./.prettierignore",
-    "lint": "eslint .",
-    "lint:fix": "eslint . --fix",
-    "test": "vitest --run",
-    "test:coverage": "vitest --coverage",
-    "test:watch": "vitest",
-    "typecheck": "tsc --noEmit"
-  },
-  "dependencies": {
-    "@ucast/core": "^1.10.2",
-    "@ucast/js": "3.1.0"
-  },
-  "prettier": "./prettier.config.mjs",
-  "devDependencies": {
-    "@casl/ability": "^6.8.0",
-    "@changesets/cli": "2.29.8",
-    "@electric-sql/pglite": "^0.3.15",
-    "@eslint/compat": "2.0.2",
-    "@eslint/js": "9.39.2",
-    "@ianvs/prettier-plugin-sort-imports": "4.7.1",
-    "@types/js-yaml": "4.0.9",
-    "@types/node": "24.10.13",
-    "@vitest/coverage-v8": "4.0.18",
-    "dedent": "1.7.1",
-    "drizzle-kit": "beta",
-    "drizzle-orm": "beta",
-    "eslint": "9.39.2",
-    "eslint-plugin-import": "2.32.0",
-    "eslint-plugin-package-json": "0.88.2",
-    "json-schema-to-typescript": "15.0.4",
-    "jsonc-eslint-parser": "2.4.2",
-    "node-pty": "1.1.0",
-    "prettier": "3.8.1",
-    "tsdown": "0.20.3",
-    "tsx": "4.21.0",
-    "typescript": "^5.9.3",
-    "typescript-eslint": "8.56.0",
-    "vitest": "4.0.18"
-  },
-  "peerDependencies": {
-    "@casl/ability": "^6.8.0",
-    "drizzle-orm": ">=1.0.0-beta.15"
-  },
-  "engines": {
-    "node": ">=22"
-  }
+  ]
 }

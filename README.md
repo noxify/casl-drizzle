@@ -1,8 +1,13 @@
-> work in progress :)
-
-# casl-drizzle
+# @noxify/casl-drizzle
 
 CASL integration for Drizzle ORM - Add type-safe authorization to your database queries
+
+## Features
+
+- 🔒 **Type-safe** - Full TypeScript support with Drizzle types
+- 🎯 **Relation support** - Filter by related table conditions
+- 🔗 **Query operators** - All Drizzle operators (eq, gt, like, etc.)
+- 💡 **IDE autocomplete** - Subject-specific field suggestions
 
 ## Install
 
@@ -10,55 +15,18 @@ CASL integration for Drizzle ORM - Add type-safe authorization to your database 
 npm install @noxify/casl-drizzle @casl/ability
 ```
 
-## Quick Start
+## Setup
 
-Define your abilities using Drizzle's query types directly:
+Define your Drizzle schema and relations:
 
 ```typescript
-import type { QueryInput } from "@noxify/casl-drizzle"
-import { accessibleBy, defineAbility } from "@noxify/casl-drizzle"
-import { integer, pgTable, text } from "drizzle-orm/pg-core"
+import { defineRelations, pgTable } from "drizzle-orm"
+import { integer, text } from "drizzle-orm/pg-core"
 
-// Define your Drizzle schema
 const users = pgTable("users", {
   id: integer().primaryKey(),
   name: text().notNull(),
-  email: text().notNull(),
 })
-
-const schema = { users }
-
-// Extract query types for your tables
-type UserQuery = QueryInput<typeof schema, "users">
-
-// Create abilities with subject-specific autocomplete
-const ability = defineAbility<{ users: UserQuery }>((can, cannot) => {
-  can("read", "users", { id: 1 }) // ✅ Autocomplete shows only user fields!
-  can("update", "users", { id: 1 })
-  cannot("delete", "users")
-})
-
-// Use with accessibleBy to get database filters
-const filters = accessibleBy(ability, "read")
-const readableUsers = await db.query.users.findMany({ where: filters.users })
-```
-
-## Features
-
-- 🔒 **Type-safe authorization** - Full TypeScript support with Drizzle types
-- 🎯 **CASL integration** - Leverage CASL's powerful rule system
-- 🗄️ **DB agnostic** - Works with PostgreSQL, MySQL, SQLite, etc.
-- 🔗 **Relation support** - Filter by related table conditions with Drizzle RQB v2
-- 📦 **Zero overhead** - Direct type composition, no runtime wrappers
-- 💡 **Smart autocomplete** - Subject-specific field suggestions with `defineAbility()`
-
-## Usage with Relations
-
-With Drizzle RQB v2, use `QueryInput` for full operator support:
-
-```typescript
-import type { QueryInput } from "@noxify/casl-drizzle"
-import { defineRelations } from "drizzle-orm"
 
 const posts = pgTable("posts", {
   id: integer().primaryKey(),
@@ -66,42 +34,49 @@ const posts = pgTable("posts", {
   authorId: integer().notNull(),
 })
 
-const relations = defineRelations({ users, posts }, (r) => ({
-  users: { posts: r.many(posts) },
-  posts: { author: r.one(users, { fields: [posts.authorId], references: [users.id] }) },
+export const relations = defineRelations({ users, posts }, (r) => ({
+  users: { posts: r.many.posts() },
+  posts: { author: r.one.users({ from: r.posts.authorId, to: r.users.id }) },
 }))
-
-type PostQuery = QueryInput<typeof relations, "posts">
-
-const ability = defineAbility<{ posts: PostQuery }>((can) => {
-  can("read", "posts", { published: true })
-  can("update", "posts", { authorId: 1 })
-})
 ```
 
-## Alternative: AbilityBuilder
+## Usage
 
-If you prefer the traditional AbilityBuilder pattern:
+Create type-safe abilities with Drizzle query conditions:
 
 ```typescript
-import type { DefineAbility } from "@noxify/casl-drizzle"
-import { AbilityBuilder } from "@casl/ability"
-import { createDrizzleAbilityFor } from "@noxify/casl-drizzle"
+import type { QueryInput } from "@noxify/casl-drizzle"
+import { accessibleBy, createDrizzleAbility, some } from "@noxify/casl-drizzle"
+import { sql } from "drizzle-orm"
 
-type AppAbility = DefineAbility<{ users: UserQuery }>
+type PostQuery = QueryInput<typeof relations, "posts">
+type UserQuery = QueryInput<typeof relations, "users">
 
-const { can, cannot, build } = new AbilityBuilder<AppAbility>(createDrizzleAbilityFor())
+const currentUserId = 1
 
-can("read", "users", { id: 1 })
-cannot("delete", "users")
+const ability = createDrizzleAbility<
+  { posts: PostQuery; users: UserQuery },
+  "read" | "create" | "update" | "delete"
+>((can) => {
+  // Simple field filtering
+  can("read", "posts", { published: true })
 
-const ability = build()
+  // Filter by related table (author)
+  can("read", "posts", { author: { id: currentUserId } })
+
+  // Complex conditions with operators
+  can("update", "posts", {
+    author: { id: currentUserId },
+    createdAt: { gte: new Date(Date.now() - 24 * 60 * 60 * 1000) },
+  })
+
+  // Raw SQL for complex queries
+  can("delete", "posts", {
+    RAW: sql`author_id = ${currentUserId} AND published = false`,
+  })
+})
+
+// Convert abilities to database filters
+const filters = accessibleBy(ability, "read")
+const posts = await db.query.posts.findMany({ where: filters.posts })
 ```
-
-## Documentation
-
-See [SIMPLIFIED_API.md](./SIMPLIFIED_API.md) for detailed examples and patterns.
-
-## License
-
-MIT

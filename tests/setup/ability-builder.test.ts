@@ -2,8 +2,8 @@ import { AbilityBuilder, subject } from "@casl/ability"
 import { describe, expect, it } from "vitest"
 
 import type { DefineDrizzleAbility, QueryInput } from "../../src"
-import type { relations } from "./schema"
 import { createDrizzleAbilityFor } from "../../src"
+import type { relations } from "./schema"
 
 type AllowedAction = "read" | "create" | "update" | "delete"
 
@@ -14,7 +14,7 @@ interface SubjectMap {
 type AppAbility = DefineDrizzleAbility<SubjectMap, AllowedAction>
 
 const { can, build, cannot } = new AbilityBuilder<AppAbility>(
-  createDrizzleAbilityFor<SubjectMap, AllowedAction>(),
+  createDrizzleAbilityFor<SubjectMap, AllowedAction>()
 )
 
 describe("AbilityBuilder Integration", () => {
@@ -22,7 +22,7 @@ describe("AbilityBuilder Integration", () => {
     can("read", "simpleTable", { id: { eq: 1 } })
 
     const ability = build()
-    expect(ability.can("read", "simpleTable")).toBe(true)
+    expect(ability.can("read", "simpleTable")).toBeTruthy()
   })
 
   it("should provide correct types for conditions in can()", () => {
@@ -32,7 +32,9 @@ describe("AbilityBuilder Integration", () => {
 
     const ability = build()
 
-    expect(ability.can("read", "simpleTable")).toBe(true)
-    expect(ability.can("read", subject("simpleTable", { name: "test" }))).toBe(false)
+    expect(ability.can("read", "simpleTable")).toBeTruthy()
+    expect(
+      ability.can("read", subject("simpleTable", { name: "test" }))
+    ).toBeFalsy()
   })
 })

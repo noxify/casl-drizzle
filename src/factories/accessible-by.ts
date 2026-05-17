@@ -30,17 +30,16 @@ function normalizeDrizzleConditions(obj: unknown): unknown {
 
     // Handle operators with $ prefix - remove the $ and recurse
     if (key.startsWith("$")) {
-      const normalizedKey = key.substring(1)
+      const normalizedKey = key.slice(1)
       result[normalizedKey] = normalizeDrizzleConditions(value)
       continue
     }
 
     // Regular field - recurse into object values
-    if (typeof value === "object" && value !== null && !Array.isArray(value)) {
-      result[key] = normalizeDrizzleConditions(value)
-    } else {
-      result[key] = value
-    }
+    result[key] =
+      typeof value === "object" && value !== null && !Array.isArray(value)
+        ? normalizeDrizzleConditions(value)
+        : value
   }
 
   return result
@@ -48,17 +47,20 @@ function normalizeDrizzleConditions(obj: unknown): unknown {
 
 const proxyHandlers: ProxyHandler<{ _ability: AnyAbility; _action: string }> = {
   get(target, subjectType) {
-    const query = rulesToQuery(target._ability, target._action, subjectType, (rule) =>
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-return
-      rule.inverted ? { NOT: rule.conditions } : rule.conditions,
+    const query = rulesToQuery(
+      target._ability,
+      target._action,
+      subjectType,
+      (rule) => (rule.inverted ? { NOT: rule.conditions } : rule.conditions)
     )
 
     if (query === null) {
       const error = ForbiddenError.from(target._ability).setMessage(
-        `It's not allowed to run "${target._action}" on "${subjectType as string}"`,
+        `It's not allowed to run "${target._action}" on "${subjectType as string}"`
       )
       error.action = target._action
-      error.subjectType = error.subject = subjectType as string
+      error.subjectType = subjectType as string
+      error.subject = subjectType as string
       throw error
     }
 
@@ -66,8 +68,7 @@ const proxyHandlers: ProxyHandler<{ _ability: AnyAbility; _action: string }> = {
 
     // If there's a single $or with one condition, unwrap it
     if (query.$or && Array.isArray(query.$or) && query.$or.length === 1) {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-      const singleCondition = query.$or[0]
+      const [singleCondition] = query.$or
       Object.assign(drizzleQuery, singleCondition)
     } else if (query.$or) {
       drizzleQuery.OR = query.$or
@@ -88,41 +89,40 @@ const proxyHandlers: ProxyHandler<{ _ability: AnyAbility; _action: string }> = {
 export const createAccessibleByFactory = <
   TResult extends Record<string, unknown>,
   TDrizzleQuery,
->() => {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  return function accessibleBy<TAbility extends PureAbility<any, TDrizzleQuery>>(
+>() =>
+  // oxlint-disable-next-line typescript/no-explicit-any
+  function accessibleBy<TAbility extends PureAbility<any, TDrizzleQuery>>(
     ability: TAbility,
-    action: TAbility["rules"][number]["action"] = "read",
+    action: TAbility["rules"][number]["action"] = "read"
   ): TResult {
     return new Proxy(
       {
         _ability: ability,
         _action: action,
       },
-      proxyHandlers,
+      proxyHandlers
     ) as unknown as TResult
   }
-}
 
 export function accessibleBy<TSubjectMap, TActions extends string = string>(
   ability: DrizzleAbility<TSubjectMap, TActions>,
-  action?: TActions,
+  action?: TActions
 ): Record<Extract<keyof TSubjectMap, string>, WhereInput>
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+// oxlint-disable-next-line typescript/no-explicit-any
 export function accessibleBy<TAbility extends PureAbility<any, any>>(
   ability: TAbility,
-  action?: TAbility["rules"][number]["action"],
+  action?: TAbility["rules"][number]["action"]
 ): Record<string, WhereInput>
 export function accessibleBy(
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // oxlint-disable-next-line typescript/no-explicit-any
   ability: PureAbility<any, any>,
-  action: string,
+  action: string
 ): Record<string, WhereInput> {
   return new Proxy(
     {
       _ability: ability,
       _action: action,
     },
-    proxyHandlers,
+    proxyHandlers
   ) as unknown as Record<string, WhereInput>
 }

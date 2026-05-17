@@ -2,9 +2,9 @@ import { sql } from "drizzle-orm"
 import { beforeAll, beforeEach, describe, expect, it } from "vitest"
 
 import type { QueryInput } from "../src"
-import type { relations } from "./setup/schema"
 import { accessibleBy, createDrizzleAbility } from "../src"
 import { createDb, resetDb } from "./setup"
+import type { relations } from "./setup/schema"
 import { schema } from "./setup/schema"
 
 describe("RAW SQL conditions and relation helpers", () => {
@@ -35,7 +35,7 @@ describe("RAW SQL conditions and relation helpers", () => {
     const ability = createDrizzleAbility<SubjectMap, AllowedAction>((can) => {
       // Can read users with odd IDs using RAW SQL - function gets evaluated by Drizzle
       can("read", "users", {
-        RAW: (table, { sql }) => sql`${table.id} % 2 = 1`,
+        AND: [{ RAW: (table, { sql: sqlFn }) => sqlFn`${table.id} % 2 = 1` }],
       })
     })
 
@@ -46,8 +46,10 @@ describe("RAW SQL conditions and relation helpers", () => {
     })
 
     // Should return users with odd IDs (1, 3)
-    const ids = results.map((r: { id: number }) => r.id).sort((a, b) => a - b)
-    expect(ids).toEqual([1, 3])
+    const ids = results
+      .map((r: { id: number }) => r.id)
+      .toSorted((a, b) => a - b)
+    expect(ids).toStrictEqual([1, 3])
   })
 
   it("should support RAW SQL with parameters", async () => {
@@ -113,8 +115,10 @@ describe("RAW SQL conditions and relation helpers", () => {
       where: filters.documents,
     })
 
-    const ids = results.map((r: { id: number }) => r.id).sort((a, b) => a - b)
-    expect(ids).toEqual([1, 3])
+    const ids = results
+      .map((r: { id: number }) => r.id)
+      .toSorted((a, b) => a - b)
+    expect(ids).toStrictEqual([1, 3])
   })
 
   it("should combine RAW conditions with normal conditions using AND", async () => {
@@ -176,7 +180,9 @@ describe("RAW SQL conditions and relation helpers", () => {
       where: filters.users,
     })
 
-    const ids = results.map((r: { id: number }) => r.id).sort((a, b) => a - b)
-    expect(ids).toEqual([1, 3])
+    const ids = results
+      .map((r: { id: number }) => r.id)
+      .toSorted((a, b) => a - b)
+    expect(ids).toStrictEqual([1, 3])
   })
 })

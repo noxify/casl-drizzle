@@ -1,5 +1,8 @@
 import type { hkt, PureAbility } from "@casl/ability"
-import type { DBQueryConfig, TablesRelationalConfig } from "drizzle-orm/relations"
+import type {
+  DBQueryConfig,
+  TablesRelationalConfig,
+} from "drizzle-orm/relations"
 import type { KnownKeysOnly } from "drizzle-orm/utils"
 
 import type { Model } from "./drizzle-query"
@@ -90,13 +93,13 @@ export type QueryInput<
    * Optional raw SQL condition for complex queries that can't be expressed with field operators.
    * The SQL template literal will be passed directly to Drizzle's where clause.
    *
+   * **IMPORTANT**: Ensure the SQL is properly parameterized to prevent SQL injection.
+   *
    * @example
    * ```ts
    * { RAW: sql`${table.age} BETWEEN 25 AND 35` }
    * { RAW: sql`EXISTS (SELECT 1 FROM related WHERE ...)` }
    * ```
-   *
-   * @warning Ensure the SQL is properly parameterized to prevent SQL injection.
    */
   RAW?: unknown
 }
@@ -181,4 +184,7 @@ export type DrizzleAbility<T, TActions extends string = string> = PureAbility<
  * })
  * ```
  */
-export type DefineDrizzleAbility<T, TActions extends string = string> = DrizzleAbility<T, TActions>
+export type DefineDrizzleAbility<
+  T,
+  TActions extends string = string,
+> = DrizzleAbility<T, TActions>

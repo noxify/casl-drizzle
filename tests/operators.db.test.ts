@@ -1,9 +1,9 @@
 import { beforeAll, describe, expect, it } from "vitest"
 
 import type { QueryInput } from "../src"
-import type { relations } from "./setup/schema"
 import { accessibleBy, createDrizzleAbility } from "../src"
 import { createDb } from "./setup"
+import type { relations } from "./setup/schema"
 import { schema } from "./setup/schema"
 
 describe("Drizzle operators (DB)", () => {
@@ -50,7 +50,7 @@ describe("Drizzle operators (DB)", () => {
 
     const where = accessibleBy(ability, "read").simpleTable
     const rows = await db.query.simpleTable.findMany({ where })
-    return rows.map((row) => row.id).sort((a, b) => a - b)
+    return rows.map((row) => row.id).toSorted((a, b) => a - b)
   }
 
   const cases = [
@@ -70,15 +70,21 @@ describe("Drizzle operators (DB)", () => {
     { field: "note", operator: "isNotNull", value: true, expected: [2] },
     { field: "nums", operator: "arrayOverlaps", value: [3], expected: [1, 2] },
     { field: "nums", operator: "arrayContains", value: [1, 2], expected: [1] },
-    { field: "nums", operator: "arrayContained", value: [1, 2, 3, 4], expected: [1, 2] },
+    {
+      field: "nums",
+      operator: "arrayContained",
+      value: [1, 2, 3, 4],
+      expected: [1, 2],
+    },
   ] as const
 
-  cases.forEach(({ field, operator, value, expected }) => {
-    it(`should filter with ${field} ${operator}`, async () => {
+  it.each(cases)(
+    `should filter with $field $operator`,
+    async ({ field, operator, value, expected }) => {
       const result = await queryFor({
         [field]: { [operator]: value },
       } as SubjectMap["simpleTable"])
-      expect(result).toEqual(expected)
-    })
-  })
+      expect(result).toStrictEqual(expected)
+    }
+  )
 })
