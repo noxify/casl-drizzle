@@ -3,10 +3,18 @@
   "version": "0.0.1-beta.3",
   "description": "Drizzle-ORM adapter for CASL - generate Drizzle where inputs from CASL abilities",
   "keywords": [
+    "ability",
+    "acl",
+    "authorization",
     "casl",
     "drizzle",
     "drizzle-orm",
-    "ucast"
+    "permissions",
+    "query-builder",
+    "rbac",
+    "relational",
+    "type-safe",
+    "typescript"
   ],
   "license": "MIT",
   "repository": {
