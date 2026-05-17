@@ -24,7 +24,7 @@ type RelationHelperBuilder = typeof operators & {
 
 /**
  * Creates a proxy that converts property access to SQL column references.
- * Used for both `columns` (relation table) and `sourceColumns` (source table).
+ * Used for relation table `columns`.
  */
 const createColumnProxy = (): Record<string, SQL<unknown>> =>
   new Proxy(

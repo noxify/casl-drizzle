@@ -6,6 +6,7 @@ CASL integration for Drizzle ORM - Add type-safe authorization to your database 
 
 - 🔒 **Type-safe** - Full TypeScript support with Drizzle types
 - 🎯 **Relation support** - Filter by related table conditions
+- 🔁 **Many-to-many support** - Filter across join-table relations
 - 🔗 **Query operators** - All Drizzle operators (eq, gt, like, etc.)
 - 💡 **IDE autocomplete** - Subject-specific field suggestions
 
@@ -64,6 +65,9 @@ const ability = createDrizzleAbility<
   // Filter by related table (author)
   can("read", "posts", { author: { id: currentUserId } })
 
+  // Many-to-many filtering (example: users by groups)
+  can("read", "users", { groups: some(sql`name = 'Admins'`) })
+
   // Complex conditions with operators
   can("update", "posts", {
     author: { id: currentUserId },
@@ -79,4 +83,10 @@ const ability = createDrizzleAbility<
 // Convert abilities to database filters
 const filters = accessibleBy(ability, "read")
 const posts = await db.query.posts.findMany({ where: filters.posts })
+const users = await db.query.users.findMany({ where: filters.users })
 ```
+
+## Behavior Notes
+
+- `every()` currently matches records only when related rows exist and all of them satisfy the condition.
+- `none()` behavior in complex relation paths is still being refined. If needed, use `RAW` SQL as an explicit fallback.

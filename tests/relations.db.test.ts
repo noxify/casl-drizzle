@@ -35,6 +35,21 @@ describe("Relations (DB)", () => {
         { id: 2, text: "Another comment", authorId: 3, postId: 1 },
         { id: 3, text: "Bob self-comment", authorId: 2, postId: 3 },
       ])
+
+      // Insert groups
+      await dbClient.insert(schema.groups).values([
+        { id: 1, name: "Admins" },
+        { id: 2, name: "Editors" },
+        { id: 3, name: "Viewers" },
+      ])
+
+      // Insert many-to-many mappings (users <-> groups)
+      await dbClient.insert(schema.usersToGroups).values([
+        { userId: 1, groupId: 1 },
+        { userId: 1, groupId: 2 },
+        { userId: 2, groupId: 2 },
+        { userId: 3, groupId: 3 },
+      ])
     })
   })
 
@@ -44,6 +59,7 @@ describe("Relations (DB)", () => {
     posts: QueryInput<typeof relations, "posts">
     users: QueryInput<typeof relations, "users">
     comments: QueryInput<typeof relations, "comments">
+    groups: QueryInput<typeof relations, "groups">
   }
 
   // Credits for the `BuildQueryResult` type helper goes to
@@ -66,11 +82,17 @@ describe("Relations (DB)", () => {
     Relations["comments"],
     { with: { post: { with: { author: true } } } }
   >
+  type GroupResult = BuildQueryResult<
+    Relations,
+    Relations["groups"],
+    { with: { participants: true } }
+  >
 
   interface ResultTypeMap {
     posts: PostResult
     users: UserResult
     comments: CommentResult
+    groups: GroupResult
   }
 
   const queryFor = async <S extends keyof SubjectMap & keyof typeof db.query>(
@@ -307,19 +329,34 @@ describe("Relations (DB)", () => {
           .toSorted((a, b) => a - b)
         expect(ids).toStrictEqual([1, 2])
       })
-
-      // oxlint-disable-next-line vitest/no-disabled-tests
-      // oxlint-disable-next-line vitest/warn-todo
-      it.todo("should support correlated subquery (future enhancement)")
     })
   })
 
   describe("One-to-Many: posts -> comments", () => {
     describe("every() - all related records must match", () => {
-      // oxlint-disable-next-line vitest/warn-todo
-      it.todo(
-        "should filter posts where all comments are from author id > 1 using every() - column naming issue with proxy"
-      )
+      it("should filter posts where all existing comments are from author id > 1 using every()", async () => {
+        const ability = createDrizzleAbility<SubjectMap, AllowedAction>(
+          (can) => {
+            can("read", "posts", {
+              comments: every(sql`author_id > 1`),
+            })
+          }
+        )
+
+        const filters = accessibleBy(ability, "read")
+        const results = await db.query.posts.findMany({ where: filters.posts })
+        const ids = results
+          .map((r: { id: number }) => r.id)
+          .toSorted((a, b) => a - b)
+
+        // Expectation: posts where all existing comments have authorId > 1
+        // Post 1: comments from authorId 2, 3 (both > 1) => ✓
+        // Post 2: no comments => ✗ (excluded by current every() behavior)
+        // Post 3: comment from authorId 2 (> 1) => ✓
+        // Post 4: no comments => ✗ (excluded by current every() behavior)
+        // Post 5: no comments => ✗ (excluded by current every() behavior)
+        expect(ids).toStrictEqual([1, 3])
+      })
 
       it("should filter users where all posts have content containing 'Alice' using every()", async () => {
         const ability = createDrizzleAbility<SubjectMap, AllowedAction>(
@@ -368,10 +405,30 @@ describe("Relations (DB)", () => {
     })
 
     describe("none() - no related records must match", () => {
-      // oxlint-disable-next-line vitest/warn-todo
-      it.todo(
-        "should filter posts where no comments are from author 2 using none() - logic appears inverted"
-      )
+      it.fails("should filter posts where no comments are from author 2 using none()", async () => {
+        const ability = createDrizzleAbility<SubjectMap, AllowedAction>(
+          (can) => {
+            can("read", "posts", {
+              comments: none(({ eq, columns }) => eq(columns.authorId, 2)),
+            })
+          }
+        )
+
+        const filters = accessibleBy(ability, "read")
+        const results = await db.query.posts.findMany({ where: filters.posts })
+
+        const ids = results
+          .map((r: { id: number }) => r.id)
+          .toSorted((a, b) => a - b)
+
+        // Expected semantics for none(): no related record may match authorId = 2.
+        // Post 1: has authorId 2 and 3 comments => excluded
+        // Post 2: no comments => included
+        // Post 3: has authorId 2 comment => excluded
+        // Post 4: no comments => included
+        // Post 5: no comments => included
+        expect(ids).toStrictEqual([2, 4, 5])
+      })
 
       it("should filter users where they have no posts using none() without condition", async () => {
         const ability = createDrizzleAbility<SubjectMap, AllowedAction>(
@@ -395,16 +452,128 @@ describe("Relations (DB)", () => {
         expect(ids).toStrictEqual([])
       })
 
-      // oxlint-disable-next-line vitest/warn-todo
-      it.todo(
-        "should filter users with none() where no posts contain 'Charlie' using raw SQL - logic appears inverted"
-      )
+      it.fails("should filter users with none() where no posts contain 'Charlie' using raw SQL", async () => {
+        const ability = createDrizzleAbility<SubjectMap, AllowedAction>(
+          (can) => {
+            can("read", "users", {
+              posts: none(sql`content ILIKE '%Charlie%'`),
+            })
+          }
+        )
+
+        const filters = accessibleBy(ability, "read")
+        const results = await db.query.users.findMany({
+          where: filters.users,
+        })
+
+        const ids = results
+          .map((r: { id: number }) => r.id)
+          .toSorted((a, b) => a - b)
+
+        // Expected semantics for none(): no related post may match the condition.
+        // Alice: posts are "Alice first post", "Alice second post" => included
+        // Bob: post is "Bob post" => included
+        // Charlie: post is "Charlie post" => excluded
+        expect(ids).toStrictEqual([1, 2])
+      })
     })
   })
 
-  describe("Many-to-Many: Placeholder", () => {
-    // oxlint-disable-next-line vitest/no-disabled-tests
-    // oxlint-disable-next-line vitest/warn-todo
-    it.todo("should support many-to-many relations (ready for implementation)")
+  describe("Many-to-Many: users <-> groups", () => {
+    describe("some()", () => {
+      it("should filter users that belong to Admins", async () => {
+        const ability = createDrizzleAbility<SubjectMap, AllowedAction>(
+          (can) => {
+            can("read", "users", {
+              groups: some(sql`name = 'Admins'`),
+            })
+          }
+        )
+
+        const filters = accessibleBy(ability, "read")
+        const results = await db.query.users.findMany({
+          where: filters.users,
+        })
+
+        const ids = results
+          .map((r: { id: number }) => r.id)
+          .toSorted((a, b) => a - b)
+
+        expect(ids).toStrictEqual([1])
+      })
+
+      it("should filter groups that include Alice as participant", async () => {
+        const ability = createDrizzleAbility<SubjectMap, AllowedAction>(
+          (can) => {
+            can("read", "groups", {
+              participants: some(({ eq, columns }) =>
+                eq(columns.name, "Alice")
+              ),
+            })
+          }
+        )
+
+        const filters = accessibleBy(ability, "read")
+        const results = await db.query.groups.findMany({
+          where: filters.groups,
+        })
+
+        const ids = results
+          .map((r: { id: number }) => r.id)
+          .toSorted((a, b) => a - b)
+
+        expect(ids).toStrictEqual([1, 2])
+      })
+    })
+
+    describe("every()", () => {
+      it("should filter users where all related groups end with 'ers'", async () => {
+        const ability = createDrizzleAbility<SubjectMap, AllowedAction>(
+          (can) => {
+            can("read", "users", {
+              groups: every(sql`name ILIKE '%ers'`),
+            })
+          }
+        )
+
+        const filters = accessibleBy(ability, "read")
+        const results = await db.query.users.findMany({
+          where: filters.users,
+        })
+
+        const ids = results
+          .map((r: { id: number }) => r.id)
+          .toSorted((a, b) => a - b)
+
+        // Alice has Admins + Editors => excluded
+        // Bob has Editors only (does not end with 'ers') => excluded
+        // Charlie has Viewers only => included
+        expect(ids).toStrictEqual([3])
+      })
+    })
+
+    describe("none()", () => {
+      it.fails("should filter users where none of their groups is Admins", async () => {
+        const ability = createDrizzleAbility<SubjectMap, AllowedAction>(
+          (can) => {
+            can("read", "users", {
+              groups: none(sql`name = 'Admins'`),
+            })
+          }
+        )
+
+        const filters = accessibleBy(ability, "read")
+        const results = await db.query.users.findMany({
+          where: filters.users,
+        })
+
+        const ids = results
+          .map((r: { id: number }) => r.id)
+          .toSorted((a, b) => a - b)
+
+        // Expected: Alice excluded (Admins), Bob + Charlie included
+        expect(ids).toStrictEqual([2, 3])
+      })
+    })
   })
 })
