@@ -1,3 +1,5 @@
 allowBuilds:
   esbuild: false
   node-pty: false
+minimumReleaseAgeExclude:
+  - tsdown@0.22.1

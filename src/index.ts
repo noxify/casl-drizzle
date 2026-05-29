@@ -1,4 +1,4 @@
-import type { AnyAbility, PureAbility } from "@casl/ability"
+import type { AnyAbility, Ability } from "@casl/ability"
 import { AbilityBuilder } from "@casl/ability"
 
 import type { DrizzleQueryFactory } from "./runtime"
@@ -40,13 +40,13 @@ export type * from "./runtime"
  * ```
  */
 export function createDrizzleAbilityFor(): new (
-  ...args: ConstructorParameters<typeof PureAbility>
+  ...args: ConstructorParameters<typeof Ability>
 ) => AnyAbility
 export function createDrizzleAbilityFor<
   TSubject,
   TActions extends string = string,
 >(): new (
-  ...args: ConstructorParameters<typeof PureAbility>
+  ...args: ConstructorParameters<typeof Ability>
 ) => DrizzleAbility<TSubject, TActions>
 export function createDrizzleAbilityFor() {
   // oxlint-disable-next-line typescript/no-explicit-any

@@ -1,6 +1,6 @@
-import type { AnyAbility, PureAbility } from "@casl/ability"
+import type { AnyAbility, Ability } from "@casl/ability"
 import { ForbiddenError } from "@casl/ability"
-import { rulesToQuery } from "@casl/ability/extra"
+import { rulesToCondition } from "@casl/ability/extra"
 
 import type { DrizzleAbility, WhereInput } from "../types"
 
@@ -47,11 +47,22 @@ function normalizeDrizzleConditions(obj: unknown): unknown {
 
 const proxyHandlers: ProxyHandler<{ _ability: AnyAbility; _action: string }> = {
   get(target, subjectType) {
-    const query = rulesToQuery(
-      target._ability,
+    type Condition = Record<string, unknown>
+    const rules = target._ability.rulesFor(
       target._action,
-      subjectType,
-      (rule) => (rule.inverted ? { NOT: rule.conditions } : rule.conditions)
+      subjectType as string
+    )
+    const query = rulesToCondition<AnyAbility, Condition, Condition>(
+      rules,
+      (rule) =>
+        (rule.inverted
+          ? { NOT: rule.conditions }
+          : rule.conditions) as Condition,
+      {
+        and: (conditions) => ({ AND: conditions }),
+        or: (conditions) => ({ OR: conditions }),
+        empty: () => ({}),
+      }
     )
 
     if (query === null) {
@@ -66,16 +77,12 @@ const proxyHandlers: ProxyHandler<{ _ability: AnyAbility; _action: string }> = {
 
     const drizzleQuery = Object.create(null) as Record<string, unknown>
 
-    // If there's a single $or with one condition, unwrap it
-    if (query.$or && Array.isArray(query.$or) && query.$or.length === 1) {
-      const [singleCondition] = query.$or
+    // If there's a single OR with one condition, unwrap it
+    if (query.OR && Array.isArray(query.OR) && query.OR.length === 1) {
+      const [singleCondition] = query.OR as Condition[]
       Object.assign(drizzleQuery, singleCondition)
-    } else if (query.$or) {
-      drizzleQuery.OR = query.$or
-    }
-
-    if (query.$and) {
-      drizzleQuery.AND = query.$and
+    } else if (query.OR) {
+      drizzleQuery.OR = query.OR
     }
 
     // Normalize all $ prefixes from operators to match Drizzle RQB v2 format
@@ -91,7 +98,7 @@ export const createAccessibleByFactory = <
   TDrizzleQuery,
 >() =>
   // oxlint-disable-next-line typescript/no-explicit-any
-  function accessibleBy<TAbility extends PureAbility<any, TDrizzleQuery>>(
+  function accessibleBy<TAbility extends Ability<any, TDrizzleQuery>>(
     ability: TAbility,
     action: TAbility["rules"][number]["action"] = "read"
   ): TResult {
@@ -109,13 +116,13 @@ export function accessibleBy<TSubjectMap, TActions extends string = string>(
   action?: TActions
 ): Record<Extract<keyof TSubjectMap, string>, WhereInput>
 // oxlint-disable-next-line typescript/no-explicit-any
-export function accessibleBy<TAbility extends PureAbility<any, any>>(
+export function accessibleBy<TAbility extends Ability<any, any>>(
   ability: TAbility,
   action?: TAbility["rules"][number]["action"]
 ): Record<string, WhereInput>
 export function accessibleBy(
   // oxlint-disable-next-line typescript/no-explicit-any
-  ability: PureAbility<any, any>,
+  ability: Ability<any, any>,
   action: string
 ): Record<string, WhereInput> {
   return new Proxy(

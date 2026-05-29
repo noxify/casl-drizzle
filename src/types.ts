@@ -1,4 +1,4 @@
-import type { hkt, PureAbility } from "@casl/ability"
+import type { hkt, Ability } from "@casl/ability"
 import type {
   DBQueryConfig,
   TablesRelationalConfig,
@@ -113,7 +113,7 @@ export type QueryInput<
  *
  * @example
  * ```ts
- * import { PureAbility } from "@casl/ability"
+ * import { Ability } from "@casl/ability"
  * import type { QueryInput, Subjects } from "@noxify/casl-drizzle"
  *
  * type QueryMap = {
@@ -121,7 +121,7 @@ export type QueryInput<
  *   posts: QueryInput<typeof relations, "posts">
  * }
  *
- * type AppAbility = PureAbility<[string, Subjects<QueryMap>]>
+ * type AppAbility = Ability<[string, Subjects<QueryMap>]>
  * ```
  */
 export type Subjects<T> =
@@ -152,7 +152,7 @@ export type Subjects<T> =
  * type AppAbility = DrizzleAbility<SubjectMap, AllowedAction>
  * ```
  */
-export type DrizzleAbility<T, TActions extends string = string> = PureAbility<
+export type DrizzleAbility<T, TActions extends string = string> = Ability<
   [TActions, Subjects<T>],
   T[keyof T]
 >

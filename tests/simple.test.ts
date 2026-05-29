@@ -56,8 +56,7 @@ describe("Table without relations", () => {
     })
 
     const expectedAccessCondition = {
-      id: 1,
-      AND: [{ NOT: { id: 2 } }],
+      AND: [{ id: 1 }, { NOT: { id: 2 } }],
     }
 
     expect(accessCondition).toStrictEqual(expectedAccessCondition)

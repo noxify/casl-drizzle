@@ -12,7 +12,7 @@ type SeedFn = Parameters<typeof seedDatabase>[1]
 
 export async function createDb(seedFn?: SeedFn) {
   const client = new PGlite()
-  const db = drizzle({ client, schema, relations })
+  const db = drizzle({ client, relations })
 
   // Run migrations to set up the schema
   await runMigrations(db, schema)
