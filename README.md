@@ -1,6 +1,6 @@
 # @noxify/casl-drizzle
 
-CASL integration for Drizzle ORM - Add type-safe authorization to your database queries
+CASL v7 integration for Drizzle ORM ( 1.0.0-rc.3 ) - Add type-safe authorization to your database queries
 
 ## Features
 
