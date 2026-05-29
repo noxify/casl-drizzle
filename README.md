@@ -13,11 +13,11 @@ CASL v7 integration for Drizzle ORM ( 1.0.0-rc.3 ) - Add type-safe authorization
 ## Install
 
 ```sh
-npm install @noxify/casl-drizzle @casl/ability drizzle-orm@beta
+npm install @noxify/casl-drizzle @casl/ability drizzle-orm@1.0.0-rc.3
 ```
 
 ```sh
-pnpm add @noxify/casl-drizzle @casl/ability drizzle-orm@beta
+pnpm add @noxify/casl-drizzle @casl/ability drizzle-orm@1.0.0-rc.3
 ```
 
 ## Setup
