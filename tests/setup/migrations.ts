@@ -1,6 +1,7 @@
 import { createRequire } from "node:module"
 
 import type { PgliteDatabase } from "drizzle-orm/pglite"
+import type { AnyRelations } from "drizzle-orm/relations"
 
 global.require = createRequire(import.meta.url)
 
@@ -10,9 +11,9 @@ let cachedStatements: string[] | null = null
  * Run Drizzle migrations on PGlite database
  * Uses drizzle-kit to generate migrations from schema
  */
-export async function runMigrations<T extends Record<string, unknown>>(
+export async function runMigrations<T extends AnyRelations>(
   db: PgliteDatabase<T>,
-  schema: T
+  schema: Record<string, unknown>
 ) {
   try {
     if (!cachedStatements) {
@@ -41,7 +42,7 @@ export async function runMigrations<T extends Record<string, unknown>>(
   }
 }
 
-export async function seedDatabase<T extends Record<string, unknown>>(
+export async function seedDatabase<T extends AnyRelations>(
   db: PgliteDatabase<T>,
   seedFn: (db: PgliteDatabase<T>) => Promise<void>
 ) {

@@ -53,33 +53,33 @@
     "@ucast/js": "4.0.1"
   },
   "devDependencies": {
-    "@casl/ability": "6.8.1",
+    "@casl/ability": "7.0.0",
     "@changesets/cli": "2.31.0",
-    "@electric-sql/pglite": "0.4.5",
+    "@electric-sql/pglite": "0.4.6",
     "@types/js-yaml": "4.0.9",
     "@types/node": "24.12.4",
-    "@vitest/coverage-v8": "4.1.6",
+    "@vitest/coverage-v8": "4.1.7",
     "dedent": "1.7.2",
-    "drizzle-kit": "beta",
-    "drizzle-orm": "beta",
+    "drizzle-kit": "1.0.0-rc.3",
+    "drizzle-orm": "1.0.0-rc.3",
     "json-schema-to-typescript": "15.0.4",
     "node-pty": "1.1.0",
-    "oxfmt": "0.50.0",
-    "oxlint": "1.65.0",
-    "tsdown": "0.22.0",
-    "tsx": "4.22.1",
-    "typescript": "^6.0.3",
-    "ultracite": "7.7.0",
-    "vitest": "4.1.6"
+    "oxfmt": "0.52.0",
+    "oxlint": "1.67.0",
+    "tsdown": "0.22.1",
+    "tsx": "4.22.3",
+    "typescript": "6.0.3",
+    "ultracite": "7.8.0",
+    "vitest": "4.1.7"
   },
   "peerDependencies": {
-    "@casl/ability": "^6.8.1",
-    "drizzle-orm": ">=1.0.0-beta.22"
+    "@casl/ability": "^7.0.0",
+    "drizzle-orm": ">=1.0.0-rc.3"
   },
   "engines": {
     "node": ">=24"
   },
-  "packageManager": "pnpm@11.1.2",
+  "packageManager": "pnpm@11.4.0",
   "authors": [
     {
       "name": "Marcus Reinhardt",
