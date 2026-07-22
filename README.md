@@ -84,10 +84,14 @@ const ability = createDrizzleAbility<
   })
 })
 
-// Convert abilities to database filters
+// Convert abilities to database filters (property access)
 const filters = accessibleBy(ability, "read")
 const posts = await db.query.posts.findMany({ where: filters.posts })
 const users = await db.query.users.findMany({ where: filters.users })
+
+// Alternative: use ofType() for CASL/Prisma-compatible API
+const postWhere = accessibleBy(ability, "read").ofType("posts")
+const userWhere = accessibleBy(ability, "read").ofType("users")
 ```
 
 ## Behavior Notes
@@ -154,6 +158,33 @@ can("read", "users", {
 ```
 
 For critical authorization rules involving complex relation filters, always use explicit `RAW` SQL to ensure predictable behavior.
+
+## Differences to `@casl/prisma`
+
+This library follows the same `accessibleBy` API pattern as `@casl/prisma` but differs in how forbidden access is handled:
+
+| Scenario | `@casl/prisma` | `@noxify/casl-drizzle` |
+| --- | --- | --- |
+| No matching rules | Returns `{ OR: [] }` (empty result set) | Throws `ForbiddenError` |
+
+**Why?** Throwing immediately gives you a clear error message (`It's not allowed to run "read" on "posts"`) instead of silently returning zero results. This makes debugging permission issues easier and avoids unexpected empty queries going unnoticed.
+
+If you need to handle the forbidden case gracefully, wrap the call in a try/catch:
+
+```typescript
+import { ForbiddenError } from "@casl/ability"
+
+try {
+  const where = accessibleBy(ability, "read").ofType("posts")
+  const posts = await db.query.posts.findMany({ where })
+} catch (error) {
+  if (error instanceof ForbiddenError) {
+    // No access to this subject — return empty or respond with 403
+    return []
+  }
+  throw error
+}
+```
 
 ## Acknowledgements
 

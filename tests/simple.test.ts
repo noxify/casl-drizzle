@@ -71,4 +71,64 @@ describe("Table without relations", () => {
       },
     ])
   })
+
+  it("ofType returns same result as property access", async () => {
+    await db.insert(schema.simpleTable).values([
+      {
+        id: 1,
+        name: "Allowed Row",
+        note: null,
+        tags: ["red", "blue"],
+        nums: [1, 2, 3],
+      },
+      {
+        id: 2,
+        name: "Forbidden Row",
+        note: "blocked",
+        tags: ["green"],
+        nums: [3, 4],
+      },
+    ])
+
+    type AllowedAction = "read" | "create" | "update" | "delete"
+
+    interface SubjectMap {
+      simpleTable: QueryInput<typeof relations, "simpleTable">
+    }
+
+    const ability = createDrizzleAbility<SubjectMap, AllowedAction>(
+      (can, cannot) => {
+        can("read", "simpleTable", { id: 1 })
+        cannot("read", "simpleTable", { id: 2 })
+      }
+    )
+
+    const viaProperty = accessibleBy(ability, "read").simpleTable
+    const viaOfType = accessibleBy(ability, "read").ofType("simpleTable")
+
+    expect(viaOfType).toStrictEqual(viaProperty)
+
+    const result = await db.query.simpleTable.findMany({
+      where: { AND: [viaOfType] },
+    })
+
+    expect(result).toHaveLength(1)
+    expect(result[0]?.id).toBe(1)
+  })
+
+  it("ofType throws ForbiddenError for unmatched subject", () => {
+    type AllowedAction = "read" | "create" | "update" | "delete"
+
+    interface SubjectMap {
+      simpleTable: QueryInput<typeof relations, "simpleTable">
+    }
+
+    const ability = createDrizzleAbility<SubjectMap, AllowedAction>(() => {
+      // No rules defined — access is forbidden
+    })
+
+    expect(() => accessibleBy(ability, "read").ofType("simpleTable")).toThrow(
+      /not allowed/u
+    )
+  })
 })

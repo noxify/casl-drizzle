@@ -8,4 +8,5 @@ export default defineConfig({
   sortImports: true,
   sortTailwindcss: true,
   trailingComma: "es5",
+  ignorePatterns: [".tegami/publish-lock.yaml"],
 })

@@ -6,6 +6,8 @@ import vitest from "ultracite/oxlint/vitest"
 
 export default defineConfig({
   extends: [core, vitest, react, next],
+  ignorePatterns: [".tegami/publish-lock.yaml"],
+
   overrides: [
     {
       files: ["tests/**/*.test.ts"],
@@ -16,7 +18,7 @@ export default defineConfig({
     {
       files: ["**/*.{ts,tsx}"],
       rules: {
-        "vitest/max-expects": ["error", 10],
+        "vitest/max-expects": ["error", { max: 10 }],
         "no-use-before-define": [
           "error",
           {
@@ -33,7 +35,7 @@ export default defineConfig({
     "no-console": "error",
     "no-inline-comments": "off",
     "no-nested-ternary": "off",
-    "vitest/max-expects": ["error", 10],
+    "vitest/max-expects": ["error", { max: 10 }],
     // Keep disabled globally; re-enable selectively via overrides for runtime-heavy paths.
     "no-use-before-define": "off",
     "no-restricted-imports": [
