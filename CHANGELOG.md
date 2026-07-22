@@ -1,3 +1,28 @@
+## @noxify/casl-drizzle@0.3.0
+
+### Update dependencies and CI infrastructure
+
+- Bump `drizzle-orm` peer dependency to `>=1.0.0-rc.4`
+- Bump `@casl/ability` peer dependency to `^7.0.1`
+- Update dev dependencies (`vitest`, `tsdown`, `oxfmt`, `oxlint`, `tsx`, `ultracite`, `@electric-sql/pglite`)
+- Migrate release workflow from Changesets to Tegami
+- Add dedicated `test` and `test-e2e` CI jobs
+- Upgrade GitHub Actions (`actions/checkout@v7`)
+- Add Node.js 26 to CI test matrix
+- Update `packageManager` to `pnpm@11.15.1`
+
+### Add `ofType()` method to `accessibleBy`
+
+Adds an `.ofType("Subject")` method as an alternative to property access for retrieving subject-specific conditions. This aligns with the CASL/Prisma `accessibleBy(ability).ofType("Subject")` API pattern.
+
+```ts
+// New API:
+const where = accessibleBy(ability, "read").ofType("posts")
+
+// Existing API still works:
+const where = accessibleBy(ability, "read").posts
+```
+
 # @noxify/casl-drizzle
 
 ## 0.2.0
