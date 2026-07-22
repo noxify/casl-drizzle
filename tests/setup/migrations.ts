@@ -32,6 +32,7 @@ export async function runMigrations<T extends AnyRelations>(
     // PGlite requires splitting statements and executing them individually
     for (const statement of cachedStatements) {
       if (statement.trim()) {
+        // oxlint-disable-next-line no-await-in-loop
         await db.execute(statement)
       }
     }

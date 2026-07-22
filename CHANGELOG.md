@@ -8,9 +8,7 @@
 
   ### Breaking Changes (upstream)
 
-  We upgraded the peer dependency `@casl/ability` to version 7.
-  This major release includes breaking changes, and this package was updated to be compatible with v7.
-  As a result, this release is no longer compatible with `@casl/ability` v6.
+  We upgraded the peer dependency `@casl/ability` to version 7. This major release includes breaking changes, and this package was updated to be compatible with v7. As a result, this release is no longer compatible with `@casl/ability` v6.
 
   https://github.com/stalniy/casl/releases/tag/%40casl%2Fability%407.0.0
 

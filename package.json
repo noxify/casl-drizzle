@@ -35,13 +35,11 @@
   },
   "scripts": {
     "build": "tsdown",
-    "ci:publish": "pnpm build && pnpm publish -r --access public --publish-branch main && pnpm changeset tag",
-    "ci:version": "pnpm changeset version && pnpm install --no-frozen-lockfile && git add .",
-    "cs": "changeset",
     "lint": "ultracite check",
     "lint:fix": "ultracite fix && pnpm format:fix",
     "format": "oxfmt --check",
     "format:fix": "oxfmt .",
+    "tegami": "node scripts/tegami.mts",
     "test": "vitest --run",
     "test:coverage": "vitest --coverage",
     "test:watch": "vitest",
@@ -53,33 +51,33 @@
     "@ucast/js": "4.0.1"
   },
   "devDependencies": {
-    "@casl/ability": "7.0.0",
-    "@changesets/cli": "2.31.0",
-    "@electric-sql/pglite": "0.4.6",
+    "@casl/ability": "7.0.1",
+    "@electric-sql/pglite": "0.5.4",
     "@types/js-yaml": "4.0.9",
-    "@types/node": "24.12.4",
-    "@vitest/coverage-v8": "4.1.7",
+    "@types/node": "24.13.3",
+    "@vitest/coverage-v8": "4.1.10",
     "dedent": "1.7.2",
-    "drizzle-kit": "1.0.0-rc.3",
-    "drizzle-orm": "1.0.0-rc.3",
+    "drizzle-kit": "1.0.0-rc.4",
+    "drizzle-orm": "1.0.0-rc.4",
     "json-schema-to-typescript": "15.0.4",
     "node-pty": "1.1.0",
-    "oxfmt": "0.52.0",
-    "oxlint": "1.67.0",
-    "tsdown": "0.22.1",
-    "tsx": "4.22.3",
+    "oxfmt": "0.60.0",
+    "oxlint": "1.75.0",
+    "tegami": "1.2.6",
+    "tsdown": "0.22.13",
+    "tsx": "4.23.1",
     "typescript": "6.0.3",
-    "ultracite": "7.8.0",
-    "vitest": "4.1.7"
+    "ultracite": "7.9.4",
+    "vitest": "4.1.10"
   },
   "peerDependencies": {
-    "@casl/ability": "^7.0.0",
-    "drizzle-orm": ">=1.0.0-rc.3"
+    "@casl/ability": "^7.0.1",
+    "drizzle-orm": ">=1.0.0-rc.4"
   },
   "engines": {
     "node": ">=24"
   },
-  "packageManager": "pnpm@11.4.0",
+  "packageManager": "pnpm@11.15.1",
   "authors": [
     {
       "name": "Marcus Reinhardt",

@@ -8,6 +8,7 @@ export {
   createAccessibleByFactory,
   accessibleBy,
 } from "./factories/accessible-by"
+export type { AccessibleByResult } from "./factories/accessible-by"
 export { createAbilityFactory } from "./factories/create-ability"
 export { ParsingQueryError } from "./query-error"
 export { some, every, none } from "./factories/relation-helpers"

@@ -45,48 +45,60 @@ function normalizeDrizzleConditions(obj: unknown): unknown {
   return result
 }
 
+function buildConditionsForSubject(
+  ability: AnyAbility,
+  action: string,
+  subjectType: string
+): WhereInput {
+  type Condition = Record<string, unknown>
+  const rules = ability.rulesFor(action, subjectType)
+  const query = rulesToCondition<AnyAbility, Condition, Condition>(
+    rules,
+    (rule) =>
+      (rule.inverted ? { NOT: rule.conditions } : rule.conditions) as Condition,
+    {
+      and: (conditions) => ({ AND: conditions }),
+      or: (conditions) => ({ OR: conditions }),
+      empty: () => ({}),
+    }
+  )
+
+  if (query === null) {
+    const error = ForbiddenError.from(ability).setMessage(
+      `It's not allowed to run "${action}" on "${subjectType}"`
+    )
+    error.action = action
+    error.subjectType = subjectType
+    error.subject = subjectType
+    throw error
+  }
+
+  const drizzleQuery = Object.create(null) as Record<string, unknown>
+
+  // If there's a single OR with one condition, unwrap it
+  if (query.OR && Array.isArray(query.OR) && query.OR.length === 1) {
+    const [singleCondition] = query.OR as Condition[]
+    Object.assign(drizzleQuery, singleCondition)
+  } else if (query.OR) {
+    drizzleQuery.OR = query.OR
+  }
+
+  // Normalize all $ prefixes from operators to match Drizzle RQB v2 format
+  return normalizeDrizzleConditions(drizzleQuery) as WhereInput
+}
+
 const proxyHandlers: ProxyHandler<{ _ability: AnyAbility; _action: string }> = {
-  get(target, subjectType) {
-    type Condition = Record<string, unknown>
-    const rules = target._ability.rulesFor(
+  get(target, prop) {
+    if (prop === "ofType") {
+      return (subjectType: string) =>
+        buildConditionsForSubject(target._ability, target._action, subjectType)
+    }
+
+    return buildConditionsForSubject(
+      target._ability,
       target._action,
-      subjectType as string
+      prop as string
     )
-    const query = rulesToCondition<AnyAbility, Condition, Condition>(
-      rules,
-      (rule) =>
-        (rule.inverted
-          ? { NOT: rule.conditions }
-          : rule.conditions) as Condition,
-      {
-        and: (conditions) => ({ AND: conditions }),
-        or: (conditions) => ({ OR: conditions }),
-        empty: () => ({}),
-      }
-    )
-
-    if (query === null) {
-      const error = ForbiddenError.from(target._ability).setMessage(
-        `It's not allowed to run "${target._action}" on "${subjectType as string}"`
-      )
-      error.action = target._action
-      error.subjectType = subjectType as string
-      error.subject = subjectType as string
-      throw error
-    }
-
-    const drizzleQuery = Object.create(null) as Record<string, unknown>
-
-    // If there's a single OR with one condition, unwrap it
-    if (query.OR && Array.isArray(query.OR) && query.OR.length === 1) {
-      const [singleCondition] = query.OR as Condition[]
-      Object.assign(drizzleQuery, singleCondition)
-    } else if (query.OR) {
-      drizzleQuery.OR = query.OR
-    }
-
-    // Normalize all $ prefixes from operators to match Drizzle RQB v2 format
-    return normalizeDrizzleConditions(drizzleQuery)
   },
 }
 
@@ -111,15 +123,26 @@ export const createAccessibleByFactory = <
     ) as unknown as TResult
   }
 
+/**
+ * Interface providing a typed `ofType` method for accessing subject-specific conditions.
+ * Compatible with the CASL/Prisma `accessibleBy(ability).ofType("Subject")` pattern.
+ */
+export interface AccessibleByResult<TSubjectMap> {
+  ofType: <S extends Extract<keyof TSubjectMap, string>>(
+    subject: S
+  ) => WhereInput
+}
+
 export function accessibleBy<TSubjectMap, TActions extends string = string>(
   ability: DrizzleAbility<TSubjectMap, TActions>,
   action?: TActions
-): Record<Extract<keyof TSubjectMap, string>, WhereInput>
+): Record<Extract<keyof TSubjectMap, string>, WhereInput> &
+  AccessibleByResult<TSubjectMap>
 // oxlint-disable-next-line typescript/no-explicit-any
 export function accessibleBy<TAbility extends Ability<any, any>>(
   ability: TAbility,
   action?: TAbility["rules"][number]["action"]
-): Record<string, WhereInput>
+): Record<string, WhereInput> & { ofType: (subject: string) => WhereInput }
 export function accessibleBy(
   // oxlint-disable-next-line typescript/no-explicit-any
   ability: Ability<any, any>,
