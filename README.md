@@ -1,6 +1,6 @@
 # @noxify/casl-drizzle
 
-CASL v7 integration for Drizzle ORM ( 1.0.0-rc.3 ) - Add type-safe authorization to your database queries
+CASL v7 integration for Drizzle ORM ( 1.0.0-rc.4 ) - Add type-safe authorization to your database queries
 
 ## Features
 
@@ -13,11 +13,11 @@ CASL v7 integration for Drizzle ORM ( 1.0.0-rc.3 ) - Add type-safe authorization
 ## Install
 
 ```sh
-npm install @noxify/casl-drizzle @casl/ability drizzle-orm@1.0.0-rc.3
+npm install @noxify/casl-drizzle @casl/ability drizzle-orm@1.0.0-rc.4
 ```
 
 ```sh
-pnpm add @noxify/casl-drizzle @casl/ability drizzle-orm@1.0.0-rc.3
+pnpm add @noxify/casl-drizzle @casl/ability drizzle-orm@1.0.0-rc.4
 ```
 
 ## Setup
@@ -118,8 +118,7 @@ Use when you need to enforce a condition across all related records that exist. 
 can("read", "posts", { comments: none() })
 ```
 
-**⚠️ Complex paths - Known Issue:**
-When filtering through nested relations, `none()` semantics can be inverted:
+**⚠️ Complex paths - Known Issue:** When filtering through nested relations, `none()` semantics can be inverted:
 
 ```typescript
 // ❌ Behavior may be unexpected:

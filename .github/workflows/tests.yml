@@ -4,7 +4,7 @@ on:
   pull_request:
     branches: ["*"]
   push:
-    branches: ["main", "changeset-release/main"]
+    branches: ["main", "tegami/version-packages"]
   merge_group:
   workflow_dispatch:
     inputs:
@@ -31,10 +31,10 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        node-version: [22, 24]
+        node-version: [22, 24, 26]
     name: Test (Node.js ${{ matrix.node-version }})
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - uses: ./.github/setup
 
