@@ -9,16 +9,6 @@ const paper = tegami({
       versionPr: {
         base: "main",
       },
-
-      release: {
-        create({ tag, pkg }) {
-          return {
-            title: tag,
-            notes: `Released ${pkg.name}`,
-            prerelease: false,
-          }
-        },
-      },
     }),
   ],
 })
