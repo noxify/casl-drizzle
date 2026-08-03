@@ -1,3 +1,10 @@
+## @noxify/casl-drizzle@0.3.1
+
+### Dependency updates
+
+- Updated all dependency
+- fixed open npm vulnerability ( `js-yaml`, dev dependency )
+
 ## @noxify/casl-drizzle@0.3.0
 
 ### Update dependencies and CI infrastructure
